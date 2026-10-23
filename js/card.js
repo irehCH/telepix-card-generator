@@ -35,7 +35,7 @@ export const CARD = {
   ],
   // 학위(PhD, MBA 등): 영문 성 오른쪽, 같은 기준선. 한글 이름보다 조금 작고 얇은 회색. gap = 성 끝에서 띄우는 거리(mm)
   degree: { after: 'enLast', weight: 'Medium', size: 7, track: 0, color: 'degree', gap: 1.4 },
-  // 괄호 속 이름(enAlias): 있으면 둘째 줄에 성 대신 이 글자를 쓴다. 한글 이름과 같은 8pt, 학위처럼 얇은 회색.
+  // 영문 성 대체명(enAlias): 있으면 둘째 줄에 성 대신 이 글자를 쓴다. 한글 이름과 같은 8pt, 학위처럼 얇은 회색.
   // maxX(mm, 은박 로고 왼쪽)를 넘으면 글자를 줄인다 (하한 minScale). 이때 학위는 첫 줄(degreeAfter) 오른쪽으로 간다.
   // 기준선은 윗줄 기준선에서 '이 글자 대문자 높이(약 2mm)'만큼 띄운 자리에 계산해 놓는다.
   // 원래 성 자리보다 올라간 만큼 아래 줄(한글 이름)도 같이 올라간다.
@@ -70,7 +70,7 @@ export const CARD = {
 
 export const WEIGHTS = ['Regular', 'Medium', 'SemiBold', 'Bold'];
 
-const LABELS = { enFirst: '영문 이름', enLast: '영문 성', degree: '학위', enAlias: '괄호 속 이름', krName: '한글 이름', company: '회사명', titleKr: '직책·소속(한글)', titleEn: '직책·소속(영문)', contact: '연락처', addr1: '주소', addr2: '주소' };
+const LABELS = { enFirst: '영문 이름', enLast: '영문 성', degree: '학위', enAlias: '영문 성 대체명', krName: '한글 이름', company: '회사명', titleKr: '직책·소속(한글)', titleEn: '직책·소속(영문)', contact: '연락처', addr1: '주소', addr2: '주소' };
 
 // ---------- 입력값 정리 ----------
 
@@ -126,7 +126,7 @@ export function normalizeEnName(s) {
   return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
 }
 
-// 괄호 속 이름: 괄호만 빼고 적힌 그대로 (대소문자 유지)
+// 영문 성 대체명: 괄호만 빼고 적힌 그대로 (대소문자 유지)
 export function normalizeAlias(s) {
   return String(s || '').replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -262,12 +262,12 @@ export function layoutBack(fields, fonts, opts = {}, card = CARD) {
   const alias = (fields.enAlias || '').trim(), al = card.alias;
   const degreeShape = degree ? shapeRuns([{ text: degree, weight: dg.weight, size: dg.size, track: dg.track }], fonts) : null;
   if (degreeShape) noteMissing(degreeShape.missing, LABELS.degree);
-  const degreeLine = alias ? al.degreeAfter : dg.after; // 괄호 속 이름이 있으면 학위는 첫 줄 오른쪽
+  const degreeLine = alias ? al.degreeAfter : dg.after; // 영문 성 대체명이 있으면 학위는 첫 줄 오른쪽
   const capOf = (weight, size, scale = 1) => {
     const f = fonts[weight], ch = (f.tables.os2 && f.tables.os2.sCapHeight) || f.unitsPerEm * 0.7;
     return ch / f.unitsPerEm * size * PT * scale;
   };
-  let shift = 0, prevY = null; // shift: 괄호 속 이름 때문에 아래 줄들이 올라간 거리(mm)
+  let shift = 0, prevY = null; // shift: 영문 성 대체명 때문에 아래 줄들이 올라간 거리(mm)
   for (const ln of card.nameLines) {
     const useAlias = alias && ln.key === al.replaces;
     const text = useAlias ? alias : (fields[ln.key] || '').trim();
@@ -321,6 +321,7 @@ export function layoutBack(fields, fonts, opts = {}, card = CARD) {
   if (phone && email) contactRuns.push({ text: '  ', weight: crun.weight, ...base });
   if (email) contactRuns.push({ text: 'E:', weight: card.labelWeight, ...base }, { text: ' ' + email, weight: crun.weight, ...base });
 
+  const bigCompany = fields.bigCompany === true || fields.bigCompany === 'true';
   const texts = {
     company: card.fixed.company,
     titleKr: joinTitle([fields.posKr, fields.deptKr], lineSpec('titleKr').sep),
@@ -367,10 +368,12 @@ export function layoutBack(fields, fonts, opts = {}, card = CARD) {
       placeRight(runOf(posEn, ln), ln, y);    // 윗줄: 직책
       continue;
     }
-    const runs = ln.key === 'contact' ? contactRuns : (texts[ln.key] ? runOf(texts[ln.key], ln) : []);
+    // 커스텀 옵션 '텔레픽스 주식회사 크게하기': 회사명을 휴대폰 줄과 같은 글자 크기로
+    const spec = ln.key === 'company' && bigCompany ? { ...ln, size: crun.size } : ln;
+    const runs = ln.key === 'contact' ? contactRuns : (texts[ln.key] ? runOf(texts[ln.key], spec) : []);
     if (!runs.length) continue;
     y = y === null ? ln.y : y - ln.gap;
-    placeRight(runs, ln, y);
+    placeRight(runs, spec, y);
   }
 
   const img = opts.image;

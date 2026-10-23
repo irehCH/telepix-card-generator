@@ -6,6 +6,9 @@
 <meta name="robots" content="noindex, nofollow">
 <base href="../">
 <title>명함 관리자</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="css/style.css">
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
@@ -13,8 +16,7 @@
 <body>
 <div id="demoBanner" class="demo-banner hidden">데모 모드 — 서버에 연결되지 않았습니다 (이 브라우저에만 저장)</div>
 <header>
-  <a class="home" href="./" data-keep-query title="홈으로">⌂ 홈</a>
-  <strong>TELEPIX 명함 관리자</strong><span class="sp"></span>
+  <a class="brand" href="./" data-keep-query title="홈으로">TelePIX CARD MASTER</a>
 </header>
 <main>
   <section id="vLogin" class="panel narrow hidden">
@@ -29,7 +31,7 @@
 
   <section id="vList" class="hidden">
     <div class="row" style="justify-content:space-between"><h1>명함 신청 목록</h1><button type="button" id="logout" class="link">로그아웃</button></div>
-    <p class="sub">이름을 누르면 신청 내용을 보고 고칠 수 있습니다. <b>PDF 합치기</b>는 위의 타입·수령 장소 필터에 맞는 신청을 수령 장소·타입별 주문용 PDF로 합쳐 내려받습니다 (필터가 전체면 조합마다 한 파일씩). 신청은 14일이 지나면 자동으로 지워집니다.</p>
+    <p class="sub">오른쪽 아이콘으로 신청을 수정·내려받기·삭제할 수 있습니다. <b>선택 PDF 합치기</b>는 지금 보이는 목록에서 체크된 신청만 수령 장소·타입별 주문용 PDF로 합쳐 내려받습니다 (조합마다 한 파일씩). 처음에는 모두 체크되어 있습니다. 신청은 14일이 지나면 자동으로 지워집니다.</p>
     <div class="panel">
       <div class="toolbar">
         <select id="typeFilter" style="width:auto" aria-label="타입">
@@ -49,13 +51,13 @@
           <option value="1">재단 여백 1mm (92×52)</option>
           <option value="2">재단 여백 2mm (94×54)</option>
         </select>
-        <button id="merge" class="accent">PDF 합치기</button>
+        <button id="merge" class="accent">선택 PDF 합치기</button>
         <button id="delAll" class="danger">전체 삭제</button>
       </div>
       <div id="listMsg" class="msg"></div>
       <div class="tablewrap">
         <table>
-          <thead><tr><th>미리보기</th><th>신청자</th><th>타입</th><th>신청</th><th>수령</th><th>메모 / 경고</th><th>PDF</th></tr></thead>
+          <thead><tr><th class="sel"><input type="checkbox" id="selAll" checked aria-label="보이는 신청 모두 선택"></th><th>미리보기</th><th>신청자</th><th>타입</th><th>신청</th><th>수령</th><th>메모 / 경고</th><th>관리</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </div>

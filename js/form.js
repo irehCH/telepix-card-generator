@@ -5,13 +5,13 @@ import { ask } from './ui.js';
 const TEXT = [ // [필드, 라벨, placeholder, input 속성]
   ['krName', '한글 이름', ''],
   ['enFirst', '영문 이름 (윗줄)', ''], ['enLast', '영문 성 (아랫줄)', ''],
-  ['degree', '학위 (선택)', 'PhD, MBA'], ['enAlias', '괄호 속 이름 (선택)', ''],
+  ['degree', '학위 (선택)', 'PhD, MBA'], ['enAlias', '영문 성 대체명 (선택)', ''],
   ['posKr', '한글 직책', '선임연구원'], ['deptKr', '한글 소속', 'AI연구팀'],
   ['posEn', '영문 직책', 'Senior Research Engineer'], ['deptEn', '영문 소속', 'AI Research Team'],
   ['phone', '휴대폰', '01012345678', 'inputmode="numeric" maxlength="13"'],
   ['email', '이메일', '', 'type="email"'],
 ];
-const OPTIONAL = ['degree', 'enAlias']; // 비워 둬도 되는 칸 (영문 성은 괄호 속 이름이 있으면 비워도 됨)
+const OPTIONAL = ['degree', 'enAlias']; // 비워 둬도 되는 칸 (영문 성은 영문 성 대체명이 있으면 비워도 됨)
 const LABELS = Object.fromEntries([...TEXT.map(([k, l]) => [k, l.replace(/ \(.*\)/, '')]), ['pickup', '수령 장소']]);
 const IMAGE_MAX_CHARS = 45000; // 시트 한 칸(5만 자)에 들어가게
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -34,7 +34,7 @@ export function createCardForm(root, { onChange = () => {}, lockPersonal = false
     ${field('krName')}
     <div class="grid2">${field('enFirst')}${field('enLast')}</div>
     <div class="grid2">${field('degree')}${field('enAlias')}</div>
-    <div class="hint">학위는 영문 성 오른쪽에 작은 회색 글자로 들어갑니다. 괄호 속 이름을 적으면 둘째 줄에 성 대신 작은 회색 글자로 들어갑니다.</div>
+    <div class="hint">학위는 영문 성 오른쪽에 작은 회색 글자로 들어갑니다. 영문 성 대체명을 적으면 둘째 줄에 성 대신 작은 회색 글자로 들어갑니다.</div>
     <div class="grid2">${field('posKr')}${field('deptKr')}</div>
     <div class="grid2">${field('posEn')}${field('deptEn')}</div>
     <div class="hint">명함에는 ‘직책 • 소속’으로 표시됩니다.</div>
@@ -55,6 +55,10 @@ export function createCardForm(root, { onChange = () => {}, lockPersonal = false
         <button type="button" data-f="imageClear">이미지 빼기</button>
       </div>
       <div class="hint">왼쪽 아래 telepix.ai 자리에 들어갑니다.</div>
+    </div>
+    <label>커스텀 옵션</label>
+    <div class="options">
+      <label class="check"><input type="checkbox" data-f="bigCompany"> 텔레픽스 주식회사 크게하기</label>
     </div>`;
 
   const $ = k => root.querySelector(`[data-f="${k}"]`);
@@ -76,6 +80,7 @@ export function createCardForm(root, { onChange = () => {}, lockPersonal = false
     fields.degree = normalizeDegree(fields.degree);
     fields.enAlias = normalizeAlias(fields.enAlias);
     fields.type = (radios().find(r => r.checked) || { value: 'basic' }).value;
+    fields.bigCompany = $('bigCompany').checked;
     return { fields, pickup: $('pickup').value, image: image && { data: image.data, mode: image.mode, invert: image.invert } };
   }
 
@@ -84,6 +89,7 @@ export function createCardForm(root, { onChange = () => {}, lockPersonal = false
     for (const [k] of TEXT) $(k).value = f[k] || '';
     $('phone').value = hyphenPhone($('phone').value);
     radios().forEach(r => { r.checked = r.value === f.type; });
+    $('bigCompany').checked = f.bigCompany === true || f.bigCompany === 'true';
     $('pickup').value = pickup || '';
     root.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
     await setImage(img || null);
