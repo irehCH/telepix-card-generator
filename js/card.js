@@ -12,12 +12,12 @@ export const THEMES = {
   basic: {
     label: '기본형', leadDays: 7, bg: [0, 0, 0, 1],
     colors: { name: [0, 0, 0, 0.15], krName: [0, 0, 0, 0.15], company: [0, 0, 0, 0.5], title: [0, 0, 0, 0.15], info: [0, 0, 0, 0.4], url: [0, 0, 0, 0.4] },
-    frontPage: 0, foilPage: 1, frontImage: 'assets/front.png',
+    frontPage: 0, foilPage: 1, frontImage: 'assets/front.png', digitalFront: 'assets/digital-front.png',
   },
   fast: {
     label: '긴급형', leadDays: 3, bg: [0, 0, 0, 0],
     colors: { name: [0, 0, 0, 1], krName: [0, 0, 0, 0.9], company: [0, 0, 0, 0.6], title: [0, 0, 0, 0.9], info: [0, 0, 0, 0.8], url: [0, 0, 0, 0.6] },
-    frontPage: 2, foilPage: null, frontImage: 'assets/front-fast.png',
+    frontPage: 2, foilPage: null, frontImage: 'assets/front-fast.png', digitalFront: 'assets/digital-front-fast.png',
     // 은박 자리에 인쇄하는 로고 (검정 + 빨강). 긴급형 원본에서 꺼내 은박 위치·크기에 맞춤.
     logo: [{"color":"black","cmds":[{"type":"M","x":78.4632,"y":9.0979},{"type":"C","x1":78.1114,"y1":9.0979,"x2":77.793,"y2":9.2356,"x":77.5624,"y":9.461},{"type":"C","x1":77.3318,"y1":9.6869,"x2":77.189,"y2":10.0002,"x":77.189,"y":10.3523},{"type":"L","x":77.189,"y":10.3655},{"type":"L","x":77.189,"y":10.379},{"type":"C","x1":77.189,"y1":10.7312,"x2":77.3318,"y2":11.0419,"x":77.5624,"y":11.2648},{"type":"C","x1":77.793,"y1":11.4877,"x2":78.1114,"y2":11.6224,"x":78.4632,"y":11.6224},{"type":"L","x":78.7944,"y":11.6224},{"type":"L","x":79.1253,"y":11.6224},{"type":"L","x":79.1253,"y":13.8189},{"type":"L","x":79.1253,"y":16.0155},{"type":"L","x":80.3753,"y":16.0155},{"type":"L","x":81.6249,"y":16.0155},{"type":"L","x":81.6249,"y":12.5569},{"type":"L","x":81.6249,"y":9.0979},{"type":"L","x":80.044,"y":9.0979},{"type":"L","x":78.4632,"y":9.0979}]},{"color":"black","cmds":[{"type":"M","x":83.5146,"y":10.9789},{"type":"C","x1":83.5146,"y1":10.9793,"x2":84.1566,"y2":10.9793,"x":84.7986,"y":10.9793},{"type":"C","x1":85.4406,"y1":10.9793,"x2":86.0826,"y2":10.9793,"x":86.0826,"y":10.9789},{"type":"C","x1":86.0826,"y1":9.7611,"x2":85.5841,"y2":8.6583,"x":84.7778,"y":7.8585},{"type":"C","x1":83.9718,"y1":7.0588,"x2":82.8576,"y2":6.5621,"x":81.6259,"y":6.5566},{"type":"L","x":81.6259,"y":7.8249},{"type":"L","x":81.6259,"y":9.0935},{"type":"C","x1":82.1482,"y1":9.0994,"x2":82.6204,"y2":9.3117,"x":82.9619,"y":9.6524},{"type":"C","x1":83.3038,"y1":9.9928,"x2":83.5146,"y2":10.4614,"x":83.5146,"y":10.9789}]},{"color":"red","cmds":[{"type":"M","x":82.5371,"y":13.2361},{"type":"C","x1":82.5371,"y1":12.5304,"x2":83.1092,"y2":11.958,"x":83.8153,"y":11.958},{"type":"C","x1":84.521,"y1":11.958,"x2":85.0931,"y2":12.5304,"x":85.0931,"y":13.2361},{"type":"C","x1":85.0931,"y1":13.9418,"x2":84.521,"y2":14.5143,"x":83.8153,"y":14.5143},{"type":"C","x1":83.1092,"y1":14.5143,"x2":82.5371,"y2":13.9418,"x":82.5371,"y":13.2361}]}],
     logoColors: { black: RICH_BLACK, red: RED },
@@ -401,13 +401,17 @@ export async function buildPdf(PDFLib, templateBytes, layout, meta = {}, card = 
 }
 
 // 주문용 합본 (한 타입만): 사람마다 앞면·뒷면, 은박판은 맨 끝에 한 장만.
-export async function mergeForPrint(PDFLib, templateBytes, type, list) {
+// opts.bleed: 재단 여백(mm). 기본 1 (92×52). 2면 94×54로 키우고, 색 배경(기본형 뒷면 K100)도 가장자리까지 늘린다.
+export async function mergeForPrint(PDFLib, templateBytes, type, list, { bleed = 1 } = {}, card = CARD) {
   const theme = THEMES[type];
   const out = await PDFLib.PDFDocument.create();
+  const bgs = []; // 쪽마다 가장자리까지 늘릴 배경색 (흰색이면 null — 종이색이라 칠할 필요 없음)
+  const colored = theme.bg.some(v => v > 0) ? theme.bg : null;
   for (const bytes of list) {
     const src = await PDFLib.PDFDocument.load(bytes);
     const pages = await out.copyPages(src, [0, 1]); // 개인 PDF의 앞면·뒷면
     pages.forEach(p => out.addPage(p));
+    bgs.push(null, colored);
   }
   if (theme.foilPage != null) {
     const tpl = await PDFLib.PDFDocument.load(templateBytes);
@@ -416,10 +420,51 @@ export async function mergeForPrint(PDFLib, templateBytes, type, list) {
     const { width, height } = p.getSize();
     p.setTrimBox(0, 0, width, height);
     p.setBleedBox(0, 0, width, height);
+    bgs.push(null);
   }
   out.setTitle(`TELEPIX 명함 ${theme.label} ${list.length}명`);
   out.setProducer('telepix-card');
-  return out.save();
+  if (bleed <= 1) return out.save();
+  return expandBleed(PDFLib, await out.save(), bgs, bleed - 1, card);
+}
+
+// 모든 쪽을 사방 extraMm 만큼 키운다. 원래 내용은 가운데에 그대로(벡터·CMYK 유지) 두고,
+// bgs[i] 가 있으면 그 색으로 늘어난 가장자리까지 먼저 칠한다.
+async function expandBleed(PDFLib, bytes, bgs, extraMm, card) {
+  const { PDFDocument, pushGraphicsState, popGraphicsState, setFillingCmykColor, rectangle, fill } = PDFLib;
+  const src = await PDFDocument.load(bytes);
+  const doc = await PDFDocument.create();
+  const embedded = await doc.embedPdf(bytes, src.getPageIndices());
+  const e = extraMm / PT, W = card.w / PT, H = card.h / PT, W2 = W + 2 * e, H2 = H + 2 * e;
+  embedded.forEach((emb, i) => {
+    const page = doc.addPage([W2, H2]);
+    if (bgs[i]) page.pushOperators(pushGraphicsState(), setFillingCmykColor(...bgs[i]), rectangle(0, 0, W2, H2), fill(), popGraphicsState());
+    page.drawPage(emb, { x: e, y: e, width: W, height: H });
+    page.setTrimBox(0, 0, W2, H2);
+    page.setBleedBox(0, 0, W2, H2);
+  });
+  doc.setTitle(src.getTitle() || 'TELEPIX 명함');
+  doc.setProducer('telepix-card');
+  return doc.save();
+}
+
+// ---------- 출력: 디지털 명함 (화면용) ----------
+
+// 재단선(90×50mm)으로 잘린 화면용 PDF 2쪽(앞·뒤). 색은 RGB, 기본형은 은박을 뒷면에 은색으로 그려 넣는다.
+// rasterize(svg, widthPx) → PNG 바이트: 브라우저에서 SVG를 그림으로 바꾸는 함수 (화면 쪽에서 넘겨준다).
+export async function buildDigitalPdf(PDFLib, layout, frontPng, rasterize, meta = {}, card = CARD, bleed = 1) {
+  const w = card.w - 2 * bleed, h = card.h - 2 * bleed;
+  const svg = toSvg(layout, { foil: true }).replace(`viewBox="0 0 ${card.w} ${card.h}"`, `viewBox="${bleed} ${bleed} ${w} ${h}"`);
+  const backPng = await rasterize(svg, 2400);
+  const doc = await PDFLib.PDFDocument.create();
+  for (const png of [frontPng, backPng]) {
+    const img = await doc.embedPng(png);
+    const page = doc.addPage([w / PT, h / PT]);
+    page.drawImage(img, { x: 0, y: 0, width: w / PT, height: h / PT });
+  }
+  doc.setTitle(meta.title || 'TELEPIX 디지털 명함');
+  doc.setProducer('telepix-card');
+  return doc.save();
 }
 
 export async function loadFonts(opentype, baseUrl) {

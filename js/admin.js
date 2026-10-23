@@ -204,6 +204,7 @@ $('merge').addEventListener('click', async () => {
     await busy('PDF를 합치는 중…', async setText => {
       try {
         if (!template) template = await fetch('assets/template.pdf').then(r => r.arrayBuffer());
+        const bleed = Number($('bleed').value) || 1;
         const d = new Date(), p2 = n => String(n).padStart(2, '0');
         const stamp = `${String(d.getFullYear()).slice(2)}${p2(d.getMonth() + 1)}${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}`;
         const done = [];
@@ -219,13 +220,13 @@ $('merge').addEventListener('click', async () => {
               pdfs.push(await fetchPdf(i.id));
             }
             setText(`${label} 합치는 중…`);
-            const merged = await mergeForPrint(PDFLib, template, type, pdfs);
-            const name = `${stamp}_${region}_${type}_${group.length}명.pdf`;
+            const merged = await mergeForPrint(PDFLib, template, type, pdfs, { bleed });
+            const name = `${stamp}_${region}_${type}_${group.length}명${bleed === 2 ? '_bleed2mm' : ''}.pdf`;
             download(merged, name);
             done.push(`${label} ${group.length}명 → ${name}`);
           }
         }
-        msg($('listMsg'), ['합친 PDF를 내려받았습니다.', ...done].join('\n'), 'ok');
+        msg($('listMsg'), [`합친 PDF를 내려받았습니다 (재단 여백 ${bleed}mm, ${90 + 2 * bleed}×${50 + 2 * bleed}mm).`, ...done].join('\n'), 'ok');
       } catch (err) { handleErr(err); }
     });
   } finally { merging = false; }

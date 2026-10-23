@@ -1,5 +1,5 @@
 // 신청자 화면
-import { layoutBack, toSvg, buildPdf, loadFonts, fieldsFromRecord, THEMES } from './card.js';
+import { layoutBack, toSvg, buildPdf, buildDigitalPdf, loadFonts, fieldsFromRecord, THEMES } from './card.js';
 import { createCardForm } from './form.js';
 import { call, session, DEMO, bytesToBase64 } from './api.js';
 import { ask, busy } from './ui.js';
@@ -147,9 +147,35 @@ $('logout').addEventListener('click', () => { session.clear(); location.reload()
 
 $('memo').addEventListener('input', saveDraft);
 
-$('btnPdf').addEventListener('click', async () => {
-  const { bytes } = await makePdf();
-  download(bytes, `명함_${form.read().fields.krName || '미리보기'}.pdf`);
+// SVG → PNG 바이트 (디지털 명함용). 가로 widthPx 픽셀, 세로는 SVG 비율대로.
+async function rasterize(svg, widthPx) {
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  await img.decode();
+  const c = document.createElement('canvas');
+  c.width = widthPx;
+  c.height = Math.round(widthPx * img.naturalHeight / img.naturalWidth);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+  return new Uint8Array(await blob.arrayBuffer());
+}
+
+// 디지털 명함: 화면·메신저용 PDF (앞·뒤 2쪽, 재단선 크기). 기본형은 은박을 뒷면에 은색으로 그려 넣는다.
+let makingDigital = false;
+$('btnDigital').addEventListener('click', async () => {
+  if (makingDigital) return;
+  makingDigital = true;
+  try {
+    await busy('디지털 명함을 만드는 중…', async () => {
+      try {
+        const layout = currentLayout();
+        const { fields } = form.read();
+        const front = new Uint8Array(await fetch(THEMES[layout.type].digitalFront).then(r => r.arrayBuffer()));
+        const bytes = await buildDigitalPdf(PDFLib, layout, front, rasterize, { title: `TELEPIX 디지털 명함 ${fields.krName}` });
+        download(bytes, `디지털명함_${fields.krName || '이름없음'}.pdf`);
+      } catch (err) { msg($('submitMsg'), '디지털 명함을 만들지 못했습니다: ' + err.message, 'err'); }
+    });
+  } finally { makingDigital = false; }
 });
 
 // 신청은 한 번에 하나만. 버튼을 누른 순간부터 끝날 때까지 다시 눌러도(엔터 포함) 무시한다.
