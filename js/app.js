@@ -226,7 +226,7 @@ $('fCard').addEventListener('submit', async e => {
 (async () => {
   if (DEMO) $('demoBanner').classList.remove('hidden');
   $('fCard').noValidate = true;
-  form = createCardForm($('cardFields'), { onChange: () => { scheduleRender(); saveDraft(); } });
+  form = createCardForm($('cardFields'), { onChange: () => { scheduleRender(); saveDraft(); }, lockPersonal: true });
   // 폰트(약 6MB)는 이메일을 입력하는 동안 뒤에서 받는다. 화면은 바로 보여 준다.
   assetsReady = Promise.all([
     loadFonts(opentype, 'assets/fonts'),

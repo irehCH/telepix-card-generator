@@ -34,7 +34,8 @@ export async function busy(message, fn) {
 // ask('지울까요?')                          → Promise<boolean>
 // ask('입력하세요', { input: '전체삭제' })   → 입력값이 일치하면 true
 // ask('안내', { cancel: null })             → 확인 버튼만 (alert 대신)
-export function ask(message, { ok = '확인', cancel = '취소', danger = false, input = null } = {}) {
+// okFirst: 확인 버튼을 왼쪽에, okClass: 확인 버튼 모양 (예: 'blue')
+export function ask(message, { ok = '확인', cancel = '취소', danger = false, input = null, okFirst = false, okClass = '' } = {}) {
   return new Promise(resolve => {
     const wrap = document.createElement('div');
     wrap.className = 'modal';
@@ -44,9 +45,10 @@ export function ask(message, { ok = '확인', cancel = '취소', danger = false,
       <div class="panel ask">
         <p class="ask-msg"></p>
         ${input !== null ? '<input class="ask-input" autocomplete="off">' : ''}
-        <div class="row" style="justify-content:flex-end;margin-top:16px">
-          ${cancel ? '<button type="button" data-a="no"></button>' : ''}
-          <button type="button" data-a="yes" class="${danger ? 'danger-fill' : 'primary'}"></button>
+        <div class="row" style="justify-content:${okFirst ? 'flex-start' : 'flex-end'};margin-top:16px">
+          ${cancel && !okFirst ? '<button type="button" data-a="no"></button>' : ''}
+          <button type="button" data-a="yes" class="${okClass || (danger ? 'danger-fill' : 'primary')}"></button>
+          ${cancel && okFirst ? '<button type="button" data-a="no"></button>' : ''}
         </div>
       </div>`;
     wrap.querySelector('.ask-msg').textContent = message;

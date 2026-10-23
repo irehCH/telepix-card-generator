@@ -20,7 +20,9 @@ function field(k) {
   return `<div><label>${esc(main)}${sub ? ` <span class="opt">(${esc(sub)}</span>` : ''}</label><input data-f="${k}" placeholder="${esc(ph)}" ${attrs}></div>`;
 }
 
-export function createCardForm(root, { onChange = () => {} } = {}) {
+// lockPersonal: 이름~이메일 칸을 잠가 두고, 누르면 '관리자 동의' 안내 후에만 풀어 준다 (신청 화면용).
+// 잠금 해제는 기억하지 않는다 — 페이지에 들어올 때마다 다시 잠긴다.
+export function createCardForm(root, { onChange = () => {}, lockPersonal = false } = {}) {
   root.innerHTML = `
     <label>명함 타입</label>
     <div class="seg" role="radiogroup">
@@ -124,6 +126,27 @@ export function createCardForm(root, { onChange = () => {} } = {}) {
     }
   });
   $('imageClear').addEventListener('click', () => setImage(null));
+
+  // 개인정보 칸 잠금
+  const personal = TEXT.map(([k]) => $(k));
+  let locked = false, asking = false;
+  const setLocked = on => {
+    locked = on;
+    personal.forEach(el => { el.readOnly = on; el.classList.toggle('locked', on); });
+  };
+  if (lockPersonal) {
+    setLocked(true);
+    root.addEventListener('focusin', async e => {
+      if (!locked || !personal.includes(e.target) || asking) return;
+      const field = e.target;
+      field.blur();
+      asking = true;
+      const ok = await ask('개인정보 수정 시, 꼭 관리자의 동의가 필요합니다.\n자의적으로 수정하면 신청이 보류됩니다.',
+        { ok: '허락 받았어요', cancel: '수정하지 않을래요', okFirst: true, okClass: 'blue' });
+      asking = false;
+      if (ok) { setLocked(false); field.focus(); }
+    });
+  }
 
   syncUi();
   return { read, fill, validate, setImage, preparedImage: () => (image ? image.prepared : null) };
