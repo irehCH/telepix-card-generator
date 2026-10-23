@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<base href="../">
+<title>텔레픽스 명함 신청</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
+</head>
+<body>
+<div id="demoBanner" class="demo-banner hidden">데모 모드 — 서버에 연결되지 않았습니다. 입력한 내용은 이 브라우저에만 저장됩니다. (이메일 예: gildong@demo.test)</div>
+<header>
+  <a class="home" href="./" data-keep-query title="홈으로">⌂ 홈</a>
+  <strong>TELEPIX 명함 신청</strong><span class="sp"></span>
+</header>
+<main>
+  <!-- 1. 로그인 -->
+  <section id="vLogin" class="panel narrow hidden">
+    <h2>회사 이메일로 로그인</h2>
+    <p class="sub">회사 이메일을 입력하면 시트에 등록된 본인 정보가 자동으로 채워집니다.</p>
+    <form id="fEmail">
+      <label for="email">회사 이메일</label>
+      <input id="email" type="email" autocomplete="email" required placeholder="name@telepix.net">
+      <div class="row" style="margin-top:12px"><button class="primary" id="btnSend">다음</button></div>
+    </form>
+    <form id="fCode" class="hidden">
+      <label for="code">인증코드 (10분간 유효)</label>
+      <input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="btnVerify">확인</button>
+        <button type="button" id="btnBack">이메일 다시 입력</button>
+      </div>
+    </form>
+    <div id="loginMsg" class="msg info"></div>
+  </section>
+
+  <!-- 2. 입력 + 미리보기 -->
+  <section id="vEdit" class="hidden">
+    <h1>명함 정보 입력</h1>
+    <p class="whoami"><span id="who"></span>(으)로 신청 중 · <button type="button" id="logout" class="link">다른 이메일로 바꾸기</button></p>
+    <p class="sub">오른쪽 미리보기를 확인한 뒤 신청하세요. 화면 색상은 근사치이며, 실제 파일은 인쇄용 CMYK로 만들어집니다.</p>
+    <div class="layout">
+      <form id="fCard" class="panel" autocomplete="off">
+        <p class="hint" style="margin:0">관리자에게 메모를 제외한 모든 항목은 필수입니다.</p>
+        <div id="cardFields"></div>
+        <label for="memo">관리자에게 메모 <span class="opt">(선택)</span></label>
+        <textarea id="memo" rows="2" placeholder="예: 수량"></textarea>
+        <div id="warn" class="msg warn"></div>
+        <div class="row" style="margin-top:16px">
+          <button class="accent" id="btnSubmit">신청하기</button>
+          <button type="button" id="btnPdf">PDF 미리 받기</button>
+        </div>
+        <div id="submitMsg" class="msg"></div>
+      </form>
+      <div class="preview">
+        <div class="cards">
+          <div><div class="card-face"><img id="frontImg" src="assets/front.png" alt="앞면"><div class="trim"></div></div><p class="cap">앞면</p></div>
+          <div><div class="card-face" id="back"></div><p class="cap" id="backCap">뒷면 · 빨간 점선이 재단선(90×50mm)입니다.</p></div>
+        </div>
+        <div class="panel" style="margin-top:16px">
+          <h2>내 신청 내역</h2>
+          <div id="mine" class="hint">아직 없습니다.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="vLoading" class="panel narrow">불러오는 중…</section>
+</main>
+<script src="js/nav.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
