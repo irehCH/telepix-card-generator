@@ -10,6 +10,7 @@ let assetsReady = Promise.resolve(); // 폰트·템플릿을 다 받으면 풀�
 
 function show(view) {
   for (const v of ['vLogin', 'vEdit', 'vLoading']) $(v).classList.toggle('hidden', v !== view);
+  document.body.classList.toggle('centered', view !== 'vEdit'); // 이메일 입력 화면은 화면 가운데
 }
 function msg(el, text, kind = 'info') { el.className = `msg ${kind}`; el.textContent = text || ''; }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -145,8 +146,22 @@ $('fCode').addEventListener('submit', async e => {
   $('btnVerify').disabled = false;
 });
 
-$('btnBack').addEventListener('click', () => {
+function backToEmail() {
   $('fCode').classList.add('hidden'); $('fEmail').classList.remove('hidden'); msg($('loginMsg'), '');
+}
+$('btnBack').addEventListener('click', backToEmail);
+
+// 제목 왼쪽 ← 버튼: 한 단계 뒤로
+const goHome = () => { location.href = new URL('./', document.baseURI).href + location.search; };
+$('backLogin').addEventListener('click', () => {
+  if (!$('fCode').classList.contains('hidden')) backToEmail(); // 인증코드 → 이메일
+  else goHome();                                              // 이메일 → 홈
+});
+$('backEdit').addEventListener('click', () => { // 명함 입력 → 이메일 (로그인을 기억하지 않으므로 처음부터)
+  session.clear();
+  backToEmail();
+  show('vLogin');
+  $('email').focus();
 });
 
 $('logout').addEventListener('click', () => { session.clear(); location.reload(); });

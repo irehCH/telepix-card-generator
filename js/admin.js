@@ -10,7 +10,10 @@ const preparedImages = new Map(); // 신청 ID → 미리보기용 이미지
 const unselected = new Set(); // 체크를 해제한 신청 ID. 기본은 모두 선택 (새로 들어온 신청도 선택된 채로 보임)
 const PICKUPS = [['서울캠퍼스', 'seoul'], ['대전캠퍼스', 'daejeon']];
 
-function show(view) { for (const v of ['vLogin', 'vList', 'vLoading']) $(v).classList.toggle('hidden', v !== view); }
+function show(view) {
+  for (const v of ['vLogin', 'vList', 'vLoading']) $(v).classList.toggle('hidden', v !== view);
+  document.body.classList.toggle('centered', view !== 'vList'); // 비밀번호 화면은 화면 가운데
+}
 function msg(el, text, kind = 'info') { el.className = `msg ${kind}`; el.textContent = text || ''; }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = d => d ? new Date(d).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' }) : '';

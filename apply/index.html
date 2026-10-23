@@ -8,20 +8,17 @@
 <title>텔레픽스 명함 신청</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500&display=swap">
 <link rel="stylesheet" href="css/style.css">
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
 </head>
 <body>
 <div id="demoBanner" class="demo-banner hidden">데모 모드 — 서버에 연결되지 않았습니다. 입력한 내용은 이 브라우저에만 저장됩니다. (이메일 예: gildong@demo.test)</div>
-<header>
-  <a class="brand" href="./" data-keep-query title="홈으로">TelePIX CARD MASTER</a>
-</header>
 <main>
   <!-- 1. 로그인 -->
   <section id="vLogin" class="panel narrow hidden">
-    <h2>회사 이메일로 로그인</h2>
+    <div class="title-row"><button type="button" class="icon back" id="backLogin" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M11 6l-6 6 6 6"/></svg></button><h2>회사 이메일로 로그인</h2></div>
     <p class="sub">회사 이메일을 입력하면 시트에 등록된 본인 정보가 자동으로 채워집니다.</p>
     <form id="fEmail">
       <label for="email">회사 이메일</label>
@@ -41,7 +38,7 @@
 
   <!-- 2. 입력 + 미리보기 -->
   <section id="vEdit" class="hidden">
-    <h1>명함 정보 입력</h1>
+    <div class="title-row"><button type="button" class="icon back" id="backEdit" aria-label="뒤로 (이메일 다시 입력)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M11 6l-6 6 6 6"/></svg></button><h1>명함 정보 입력</h1></div>
     <p class="whoami"><span id="who"></span>(으)로 신청 중 · <button type="button" id="logout" class="link">다른 이메일로 바꾸기</button></p>
     <p class="sub">오른쪽 미리보기를 확인한 뒤 신청하세요. 화면 색상은 근사치이며, 실제 파일은 인쇄용 CMYK로 만들어집니다.</p>
     <div class="layout">
