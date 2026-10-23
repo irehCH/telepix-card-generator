@@ -178,8 +178,7 @@ $('btnDigital').addEventListener('click', async () => {
         await assetsReady;
         const layout = currentLayout();
         const { fields } = form.read();
-        const front =new Uint8Array(await fetch(THEMES[layout.type].digitalFront).then(r => r.arrayBuffer()));
-        const bytes = await buildDigitalPdf(PDFLib, layout, front, rasterize, { title: `TELEPIX 디지털 명함 ${fields.krName}` });
+        const bytes = await buildDigitalPdf(PDFLib, template, layout, rasterize, { title: `TELEPIX 디지털 명함 ${fields.krName}` });
         download(bytes, `디지털명함_${fields.krName || '이름없음'}.pdf`);
       } catch (err) { msg($('submitMsg'), '디지털 명함을 만들지 못했습니다: ' + err.message, 'err'); }
     });
