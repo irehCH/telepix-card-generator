@@ -11,12 +11,12 @@ const RED = [0, 0.9, 0.6, 0];
 export const THEMES = {
   basic: {
     label: '기본형', leadDays: 7, bg: [0, 0, 0, 1],
-    colors: { name: [0, 0, 0, 0.15], krName: [0, 0, 0, 0.15], company: [0, 0, 0, 0.5], title: [0, 0, 0, 0.15], info: [0, 0, 0, 0.4], url: [0, 0, 0, 0.4] },
+    colors: { name: [0, 0, 0, 0.15], krName: [0, 0, 0, 0.15], degree: [0, 0, 0, 0.5], company: [0, 0, 0, 0.5], title: [0, 0, 0, 0.15], info: [0, 0, 0, 0.4], url: [0, 0, 0, 0.4] },
     frontPage: 0, foilPage: 1, frontImage: 'assets/front.png',
   },
   fast: {
     label: '긴급형', leadDays: 3, bg: [0, 0, 0, 0],
-    colors: { name: [0, 0, 0, 1], krName: [0, 0, 0, 0.9], company: [0, 0, 0, 0.6], title: [0, 0, 0, 0.9], info: [0, 0, 0, 0.8], url: [0, 0, 0, 0.6] },
+    colors: { name: [0, 0, 0, 1], krName: [0, 0, 0, 0.9], degree: [0, 0, 0, 0.55], company: [0, 0, 0, 0.6], title: [0, 0, 0, 0.9], info: [0, 0, 0, 0.8], url: [0, 0, 0, 0.6] },
     frontPage: 2, foilPage: null, frontImage: 'assets/front-fast.png',
     // 은박 자리에 인쇄하는 로고 (검정 + 빨강). 긴급형 원본에서 꺼내 은박 위치·크기에 맞춤.
     logo: [{"color":"black","cmds":[{"type":"M","x":78.4632,"y":9.0979},{"type":"C","x1":78.1114,"y1":9.0979,"x2":77.793,"y2":9.2356,"x":77.5624,"y":9.461},{"type":"C","x1":77.3318,"y1":9.6869,"x2":77.189,"y2":10.0002,"x":77.189,"y":10.3523},{"type":"L","x":77.189,"y":10.3655},{"type":"L","x":77.189,"y":10.379},{"type":"C","x1":77.189,"y1":10.7312,"x2":77.3318,"y2":11.0419,"x":77.5624,"y":11.2648},{"type":"C","x1":77.793,"y1":11.4877,"x2":78.1114,"y2":11.6224,"x":78.4632,"y":11.6224},{"type":"L","x":78.7944,"y":11.6224},{"type":"L","x":79.1253,"y":11.6224},{"type":"L","x":79.1253,"y":13.8189},{"type":"L","x":79.1253,"y":16.0155},{"type":"L","x":80.3753,"y":16.0155},{"type":"L","x":81.6249,"y":16.0155},{"type":"L","x":81.6249,"y":12.5569},{"type":"L","x":81.6249,"y":9.0979},{"type":"L","x":80.044,"y":9.0979},{"type":"L","x":78.4632,"y":9.0979}]},{"color":"black","cmds":[{"type":"M","x":83.5146,"y":10.9789},{"type":"C","x1":83.5146,"y1":10.9793,"x2":84.1566,"y2":10.9793,"x":84.7986,"y":10.9793},{"type":"C","x1":85.4406,"y1":10.9793,"x2":86.0826,"y2":10.9793,"x":86.0826,"y":10.9789},{"type":"C","x1":86.0826,"y1":9.7611,"x2":85.5841,"y2":8.6583,"x":84.7778,"y":7.8585},{"type":"C","x1":83.9718,"y1":7.0588,"x2":82.8576,"y2":6.5621,"x":81.6259,"y":6.5566},{"type":"L","x":81.6259,"y":7.8249},{"type":"L","x":81.6259,"y":9.0935},{"type":"C","x1":82.1482,"y1":9.0994,"x2":82.6204,"y2":9.3117,"x":82.9619,"y":9.6524},{"type":"C","x1":83.3038,"y1":9.9928,"x2":83.5146,"y2":10.4614,"x":83.5146,"y":10.9789}]},{"color":"red","cmds":[{"type":"M","x":82.5371,"y":13.2361},{"type":"C","x1":82.5371,"y1":12.5304,"x2":83.1092,"y2":11.958,"x":83.8153,"y":11.958},{"type":"C","x1":84.521,"y1":11.958,"x2":85.0931,"y2":12.5304,"x":85.0931,"y":13.2361},{"type":"C","x1":85.0931,"y1":13.9418,"x2":84.521,"y2":14.5143,"x":83.8153,"y":14.5143},{"type":"C","x1":83.1092,"y1":14.5143,"x2":82.5371,"y2":13.9418,"x":82.5371,"y":13.2361}]}],
@@ -33,6 +33,8 @@ export const CARD = {
     { key: 'enLast', y: 16.01, weight: 'Bold', size: 16, track: 46, color: 'name' },
     { key: 'krName', y: 20.33, weight: 'Bold', size: 8, track: 100, dx: 0.15, color: 'krName' },
   ],
+  // 학위(PhD, MBA 등): 영문 성 오른쪽, 같은 기준선. 한글 이름보다 조금 작고 얇은 회색. gap = 성 끝에서 띄우는 거리(mm)
+  degree: { after: 'enLast', weight: 'Medium', size: 7, track: 0, color: 'degree', gap: 1.4 },
   rightX: 85.91,
   maxWidth: 79.5, // 오른쪽 정렬 줄이 넘으면 안 되는 폭
   minScale: 0.85, // 넘칠 때 자동 축소 하한
@@ -63,7 +65,7 @@ export const CARD = {
 
 export const WEIGHTS = ['Regular', 'Medium', 'SemiBold', 'Bold'];
 
-const LABELS = { enFirst: '영문 이름', enLast: '영문 성', krName: '한글 이름', company: '회사명', titleKr: '직책·소속(한글)', titleEn: '직책·소속(영문)', contact: '연락처', addr1: '주소', addr2: '주소' };
+const LABELS = { enFirst: '영문 이름', enLast: '영문 성', degree: '학위', krName: '한글 이름', company: '회사명', titleKr: '직책·소속(한글)', titleEn: '직책·소속(영문)', contact: '연락처', addr1: '주소', addr2: '주소' };
 
 // ---------- 입력값 정리 ----------
 
@@ -106,31 +108,43 @@ export function normalizeFields(f) {
   if (out.posKr === undefined && out.titleKr !== undefined) [out.posKr, out.deptKr] = splitTitle(out.titleKr);
   if (out.posEn === undefined && out.titleEn !== undefined) [out.posEn, out.deptEn] = splitTitle(out.titleEn);
   for (const k of ['enFirst', 'enLast']) if (out[k] !== undefined) out[k] = normalizeEnName(out[k]);
+  if (out.degree !== undefined) out.degree = normalizeDegree(out.degree);
   if (!THEMES[out.type]) out.type = 'basic';
   return out;
 }
 
-// 영문 이름 규칙: '-'·띄어쓰기는 빼고, 첫 글자만 대문자. "Gyu-Ang"·"Gyu ang" → "Gyuang", "KIM" → "Kim"
+// 영문 이름 규칙: 괄호와 그 안, '-'·띄어쓰기는 빼고, 첫 글자만 대문자.
+// "Gyu-Ang"·"Gyu ang" → "Gyuang", "KIM" → "Kim", "Fern (FERFSDF)" → "Fern"
 export function normalizeEnName(s) {
-  const w = String(s || '').replace(/[-\s]/g, '');
+  const w = String(s || '').replace(/\([^)]*\)?/g, '').replace(/[-\s()]/g, '');
   return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
 }
 
-// "Quang Huy Bui" → ["Quang Huy", "Bui"]
+// 학위 표기 통일: 마침표·띄어쓰기를 뺀다. 여러 개면 쉼표로 구분. "Ph.D." → "PhD", "M.B.A., Ph. D." → "MBA, PhD"
+export function normalizeDegree(s) {
+  return String(s || '').split(',').map(d => d.replace(/[.\s]/g, '')).filter(Boolean).join(', ');
+}
+
+// "Quang Huy Bui" → ["Quang Huy", "Bui", ""], "Sangu Kim, MBA" → ["Sangu", "Kim", "MBA"] (쉼표 뒤는 학위)
+// 시트 칸의 둘째 줄부터와 괄호(안의 글자 포함)는 버린다: "Fern (FERFSDF) Kim" → ["Fern", "Kim", ""]
 export function splitEnglishName(full) {
-  const s = String(full || '').trim().replace(/\s+/g, ' ');
+  const line = String(full || '').split(/\r?\n/)[0].replace(/\([^)]*\)?/g, ' ').replace(/[()]/g, ' ');
+  const [name, ...rest] = line.split(',');
+  const s = name.trim().replace(/\s+/g, ' ');
+  const degree = rest.map(d => d.trim()).filter(Boolean).join(', ');
   const i = s.lastIndexOf(' ');
-  return i < 0 ? [s, ''] : [s.slice(0, i), s.slice(i + 1)];
+  return i < 0 ? [s, '', degree] : [s.slice(0, i), s.slice(i + 1), degree];
 }
 
 // 시트의 한 행(직원 정보)을 폼 값으로 바꾼다.
 export function fieldsFromRecord(rec) {
-  const [enFirst, enLast] = splitEnglishName(rec.enName).map(normalizeEnName);
+  const [first, last, rawDegree] = splitEnglishName(rec.enName);
+  const enFirst = normalizeEnName(first), enLast = normalizeEnName(last), degree = normalizeDegree(rawDegree);
   const [kr, en] = String(rec.title || '').split(/\r?\n/);
   const [posKr, deptKr] = splitTitle(kr);
   const [posEn, deptEn] = splitTitle(en);
   return {
-    krName: rec.krName || '', enFirst, enLast, posKr, deptKr, posEn, deptEn,
+    krName: rec.krName || '', enFirst, enLast, degree, posKr, deptKr, posEn, deptEn,
     phone: hyphenPhone(rec.phone), email: rec.email || '',
   };
 }
@@ -228,13 +242,22 @@ export function layoutBack(fields, fonts, opts = {}, card = CARD) {
   const add = (cmds, color) => shapes.push({ cmds, cmyk: theme.colors[color] });
   const noteMissing = (m, label) => { if (m.length) warnings.push(`${label}: 폰트에 없는 글자 ${m.join(' ')}`); };
 
+  const degree = (fields.degree || '').trim(), dg = card.degree;
   for (const ln of card.nameLines) {
     const text = (fields[ln.key] || '').trim();
     if (!text) continue;
     const s = shapeRuns([{ text, weight: ln.weight, size: ln.size, track: ln.track }], fonts);
     noteMissing(s.missing, LABELS[ln.key]);
-    if (card.nameX + s.width > card.w - 4) warnings.push(`이름(${text})이 너무 깁니다.`);
+    let end = card.nameX + (ln.dx || 0) + s.width;
     add(transformCmds(s.cmds, (x, y) => [x + card.nameX + (ln.dx || 0), y + ln.y]), ln.color);
+    if (degree && ln.key === dg.after) {
+      const d = shapeRuns([{ text: degree, weight: dg.weight, size: dg.size, track: dg.track }], fonts);
+      noteMissing(d.missing, LABELS.degree);
+      const dx = end + dg.gap;
+      add(transformCmds(d.cmds, (x, y) => [x + dx, y + ln.y]), dg.color);
+      end = dx + d.width;
+    }
+    if (end > card.w - 4) warnings.push(`이름(${text})이 너무 깁니다.`);
   }
 
   const contactRuns = [];
