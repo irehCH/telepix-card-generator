@@ -37,8 +37,9 @@ export const CARD = {
   degree: { after: 'enLast', weight: 'Medium', size: 7, track: 0, color: 'degree', gap: 1.4 },
   // 괄호 속 이름(enAlias): 있으면 둘째 줄에 성 대신 이 글자를 쓴다. 한글 이름과 같은 8pt, 학위처럼 얇은 회색.
   // maxX(mm, 은박 로고 왼쪽)를 넘으면 글자를 줄인다 (하한 minScale). 이때 학위는 첫 줄(degreeAfter) 오른쪽으로 간다.
-  // y: 기준선(mm). 성 줄(16.01)보다 올려 첫 줄에 바짝 붙인다.
-  alias: { replaces: 'enLast', degreeAfter: 'enFirst', y: 14.1, weight: 'Medium', size: 8, track: 0, color: 'degree', maxX: 75, minScale: 0.6 },
+  // 기준선은 윗줄 기준선에서 '이 글자 대문자 높이(약 2mm)'만큼 띄운 자리에 계산해 놓는다.
+  // 원래 성 자리보다 올라간 만큼 아래 줄(한글 이름)도 같이 올라간다.
+  alias: { replaces: 'enLast', degreeAfter: 'enFirst', weight: 'Medium', size: 8, track: 0, color: 'degree', maxX: 75, minScale: 0.6 },
   rightX: 85.91,
   maxWidth: 79.5, // 오른쪽 정렬 줄이 넘으면 안 되는 폭
   minScale: 0.85, // 넘칠 때 자동 축소 하한
@@ -262,9 +263,17 @@ export function layoutBack(fields, fonts, opts = {}, card = CARD) {
   const degreeShape = degree ? shapeRuns([{ text: degree, weight: dg.weight, size: dg.size, track: dg.track }], fonts) : null;
   if (degreeShape) noteMissing(degreeShape.missing, LABELS.degree);
   const degreeLine = alias ? al.degreeAfter : dg.after; // 괄호 속 이름이 있으면 학위는 첫 줄 오른쪽
+  const capOf = (weight, size, scale = 1) => {
+    const f = fonts[weight], ch = (f.tables.os2 && f.tables.os2.sCapHeight) || f.unitsPerEm * 0.7;
+    return ch / f.unitsPerEm * size * PT * scale;
+  };
+  let shift = 0, prevY = null; // shift: 괄호 속 이름 때문에 아래 줄들이 올라간 거리(mm)
   for (const ln of card.nameLines) {
     const useAlias = alias && ln.key === al.replaces;
     const text = useAlias ? alias : (fields[ln.key] || '').trim();
+    let lineY = ln.y - shift;
+    const above = prevY;
+    prevY = lineY;
     if (!text) continue;
     const x0 = card.nameX + (ln.dx || 0);
     let s;
@@ -272,24 +281,32 @@ export function layoutBack(fields, fonts, opts = {}, card = CARD) {
       // 학위까지 한 줄에 들어가도록 필요하면 줄인다
       const run = { text, weight: al.weight, size: al.size, track: al.track };
       s = shapeRuns([run], fonts);
+      let aScale = 1;
       const room = al.maxX - x0 - (degreeShape && degreeLine === ln.key ? dg.gap + degreeShape.width : 0);
       if (s.width > room) {
-        const scale = Math.max(al.minScale, room / s.width);
+        const scale = aScale = Math.max(al.minScale, room / s.width);
         s = shapeRuns([run], fonts, scale);
         if (s.width > room + 0.01) warnings.push(`${LABELS.enAlias} 줄이 너무 길어 최소 크기로도 넘칩니다. 내용을 줄여 주세요.`);
         else warnings.push(`${LABELS.enAlias} 줄이 길어 ${Math.round(scale * 100)}%로 자동 축소했습니다.`);
       }
       noteMissing(s.missing, LABELS.enAlias);
-      add(transformCmds(s.cmds, (x, y) => [x + x0, y + al.y]), al.color);
+      // 윗줄과의 틈 = 원래 크기의 대문자 높이, 글자가 줄었으면 줄어든 높이만큼만 내려온다
+      if (above != null) {
+        const y = above + capOf(al.weight, al.size) + capOf(al.weight, al.size, aScale);
+        shift += lineY - y;
+        lineY = prevY = y;
+      }
+      const yy = lineY;
+      add(transformCmds(s.cmds, (x, y) => [x + x0, y + yy]), al.color);
     } else {
       s = shapeRuns([{ text, weight: ln.weight, size: ln.size, track: ln.track }], fonts);
       noteMissing(s.missing, LABELS[ln.key]);
-      add(transformCmds(s.cmds, (x, y) => [x + x0, y + ln.y]), ln.color);
+      add(transformCmds(s.cmds, (x, y) => [x + x0, y + lineY]), ln.color);
     }
     let end = x0 + s.width;
     if (degreeShape && ln.key === degreeLine) {
       const dx = end + dg.gap;
-      add(transformCmds(degreeShape.cmds, (x, y) => [x + dx, y + ln.y]), dg.color);
+      add(transformCmds(degreeShape.cmds, (x, y) => [x + dx, y + lineY]), dg.color);
       end = dx + degreeShape.width;
     }
     if (!useAlias && end > card.w - 4) warnings.push(`이름(${text})이 너무 깁니다.`);
