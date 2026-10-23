@@ -110,10 +110,10 @@ export function normalizeFields(f) {
   return out;
 }
 
-// 영문 이름 규칙: '-' 는 빼고, 단어마다 첫 글자만 대문자. "Gyu-Ang" → "Gyuang", "KIM" → "Kim"
+// 영문 이름 규칙: '-'·띄어쓰기는 빼고, 첫 글자만 대문자. "Gyu-Ang"·"Gyu ang" → "Gyuang", "KIM" → "Kim"
 export function normalizeEnName(s) {
-  return String(s || '').replace(/-/g, '').replace(/\s+/g, ' ').trim()
-    .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  const w = String(s || '').replace(/[-\s]/g, '');
+  return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
 }
 
 // "Quang Huy Bui" → ["Quang Huy", "Bui"]
