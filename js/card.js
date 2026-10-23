@@ -105,8 +105,15 @@ export function normalizeFields(f) {
   const out = { ...f };
   if (out.posKr === undefined && out.titleKr !== undefined) [out.posKr, out.deptKr] = splitTitle(out.titleKr);
   if (out.posEn === undefined && out.titleEn !== undefined) [out.posEn, out.deptEn] = splitTitle(out.titleEn);
+  for (const k of ['enFirst', 'enLast']) if (out[k] !== undefined) out[k] = normalizeEnName(out[k]);
   if (!THEMES[out.type]) out.type = 'basic';
   return out;
+}
+
+// 영문 이름 규칙: '-' 는 빼고, 단어마다 첫 글자만 대문자. "Gyu-Ang" → "Gyuang", "KIM" → "Kim"
+export function normalizeEnName(s) {
+  return String(s || '').replace(/-/g, '').replace(/\s+/g, ' ').trim()
+    .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 }
 
 // "Quang Huy Bui" → ["Quang Huy", "Bui"]
@@ -118,7 +125,7 @@ export function splitEnglishName(full) {
 
 // 시트의 한 행(직원 정보)을 폼 값으로 바꾼다.
 export function fieldsFromRecord(rec) {
-  const [enFirst, enLast] = splitEnglishName(rec.enName);
+  const [enFirst, enLast] = splitEnglishName(rec.enName).map(normalizeEnName);
   const [kr, en] = String(rec.title || '').split(/\r?\n/);
   const [posKr, deptKr] = splitTitle(kr);
   const [posEn, deptEn] = splitTitle(en);

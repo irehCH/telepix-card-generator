@@ -1,5 +1,5 @@
 // 명함 입력 폼 — 신청 화면과 관리자 수정 화면이 함께 쓴다.
-import { hyphenPhone, normalizeFields, prepareImage, THEMES } from './card.js';
+import { hyphenPhone, normalizeFields, normalizeEnName, prepareImage, THEMES } from './card.js';
 import { ask } from './ui.js';
 
 const TEXT = [ // [필드, 라벨, placeholder, input 속성]
@@ -67,6 +67,8 @@ export function createCardForm(root, { onChange = () => {}, lockPersonal = false
   function read() {
     const fields = {};
     for (const [k] of TEXT) fields[k] = $(k).value.trim();
+    fields.enFirst = normalizeEnName(fields.enFirst);
+    fields.enLast = normalizeEnName(fields.enLast);
     fields.type = (radios().find(r => r.checked) || { value: 'basic' }).value;
     return { fields, pickup: $('pickup').value, image: image && { data: image.data, mode: image.mode, invert: image.invert } };
   }
@@ -113,6 +115,13 @@ export function createCardForm(root, { onChange = () => {}, lockPersonal = false
     if (t.classList.contains('invalid') && t.value.trim()) t.classList.remove('invalid');
     if (t.type === 'radio') syncUi();
     if (k !== 'imageFile') onChange();
+  });
+  // 영문 이름은 칸을 벗어날 때 규칙대로 고쳐 보여 준다 (입력 중에 바꾸면 커서가 튐)
+  root.addEventListener('focusout', e => {
+    const t = e.target, k = t.dataset && t.dataset.f;
+    if (k !== 'enFirst' && k !== 'enLast') return;
+    const v = normalizeEnName(t.value);
+    if (v !== t.value) { t.value = v; onChange(); }
   });
   root.addEventListener('change', async e => {
     const k = e.target.dataset.f;
