@@ -37,7 +37,8 @@ export const CARD = {
   degree: { after: 'enLast', weight: 'Medium', size: 7, track: 0, color: 'degree', gap: 1.4 },
   // 괄호 속 이름(enAlias): 있으면 둘째 줄에 성 대신 이 글자를 쓴다. 한글 이름과 같은 8pt, 학위처럼 얇은 회색.
   // maxX(mm, 은박 로고 왼쪽)를 넘으면 글자를 줄인다 (하한 minScale). 이때 학위는 첫 줄(degreeAfter) 오른쪽으로 간다.
-  alias: { replaces: 'enLast', degreeAfter: 'enFirst', weight: 'Medium', size: 8, track: 0, color: 'degree', maxX: 75, minScale: 0.6 },
+  // y: 기준선(mm). 성 줄(16.01)보다 올려 첫 줄에 바짝 붙인다.
+  alias: { replaces: 'enLast', degreeAfter: 'enFirst', y: 14.1, weight: 'Medium', size: 8, track: 0, color: 'degree', maxX: 75, minScale: 0.6 },
   rightX: 85.91,
   maxWidth: 79.5, // 오른쪽 정렬 줄이 넘으면 안 되는 폭
   minScale: 0.85, // 넘칠 때 자동 축소 하한
@@ -279,7 +280,7 @@ export function layoutBack(fields, fonts, opts = {}, card = CARD) {
         else warnings.push(`${LABELS.enAlias} 줄이 길어 ${Math.round(scale * 100)}%로 자동 축소했습니다.`);
       }
       noteMissing(s.missing, LABELS.enAlias);
-      add(transformCmds(s.cmds, (x, y) => [x + x0, y + ln.y]), al.color);
+      add(transformCmds(s.cmds, (x, y) => [x + x0, y + al.y]), al.color);
     } else {
       s = shapeRuns([{ text, weight: ln.weight, size: ln.size, track: ln.track }], fonts);
       noteMissing(s.missing, LABELS[ln.key]);
