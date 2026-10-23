@@ -6,6 +6,7 @@ import { ask, busy } from './ui.js';
 
 const $ = id => document.getElementById(id);
 let fonts, template, lastLayout, form;
+let assetsReady = Promise.resolve(); // 폰트·템플릿을 다 받으면 풀린다
 
 function show(view) {
   for (const v of ['vLogin', 'vEdit', 'vLoading']) $(v).classList.toggle('hidden', v !== view);
@@ -18,7 +19,11 @@ function currentLayout() {
 }
 
 function render() {
-  if (!fonts || !form) return;
+  if (!form) return;
+  if (!fonts) {
+    $('back').innerHTML = '<div class="row hint" style="height:100%;justify-content:center"><div class="spinner small" aria-hidden="true"></div> 미리보기를 불러오는 중…</div>';
+    return;
+  }
   lastLayout = currentLayout();
   const theme = THEMES[lastLayout.type];
   if (!$('frontImg').src.endsWith(theme.frontImage)) $('frontImg').src = theme.frontImage;
@@ -80,6 +85,7 @@ async function enterEditor(res) {
   renderMine(res.submissions);
   show('vEdit');
   render();
+  assetsReady.then(render).catch(err => msg($('submitMsg'), '폰트·템플릿을 불러오지 못했습니다. 새로고침해 주세요. (' + err.message + ')', 'err'));
 }
 
 function loggedIn(r) {
@@ -103,6 +109,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('focus', refreshMine);
 
 async function makePdf() {
+  await assetsReady;
   const layout = currentLayout();
   const { fields } = form.read();
   return { bytes: await buildPdf(PDFLib, template, layout, { title: `TELEPIX 명함 ${fields.krName}` }), layout };
@@ -120,7 +127,7 @@ function download(bytes, name) {
 $('fEmail').addEventListener('submit', async e => {
   e.preventDefault();
   $('btnSend').disabled = true;
-  msg($('loginMsg'), '확인 중…');
+  msg($('loginMsg'), '확인 중… 처음에는 5~10초 걸릴 수 있습니다.');
   try {
     const r = await call('requestCode', { email: $('email').value });
     if (r.token) { loggedIn(r); return; } // 인증코드를 쓰지 않는 설정이면 바로 로그인
@@ -168,9 +175,10 @@ $('btnDigital').addEventListener('click', async () => {
   try {
     await busy('디지털 명함을 만드는 중…', async () => {
       try {
+        await assetsReady;
         const layout = currentLayout();
         const { fields } = form.read();
-        const front = new Uint8Array(await fetch(THEMES[layout.type].digitalFront).then(r => r.arrayBuffer()));
+        const front =new Uint8Array(await fetch(THEMES[layout.type].digitalFront).then(r => r.arrayBuffer()));
         const bytes = await buildDigitalPdf(PDFLib, layout, front, rasterize, { title: `TELEPIX 디지털 명함 ${fields.krName}` });
         download(bytes, `디지털명함_${fields.krName || '이름없음'}.pdf`);
       } catch (err) { msg($('submitMsg'), '디지털 명함을 만들지 못했습니다: ' + err.message, 'err'); }
@@ -220,14 +228,11 @@ $('fCard').addEventListener('submit', async e => {
   if (DEMO) $('demoBanner').classList.remove('hidden');
   $('fCard').noValidate = true;
   form = createCardForm($('cardFields'), { onChange: () => { scheduleRender(); saveDraft(); } });
-  try {
-    [fonts, template] = await Promise.all([
-      loadFonts(opentype, 'assets/fonts'),
-      fetch('assets/template.pdf').then(r => r.arrayBuffer()),
-    ]);
-  } catch (err) {
-    $('vLoading').textContent = '폰트/템플릿을 불러오지 못했습니다: ' + err.message;
-    return;
-  }
+  // 폰트(약 6MB)는 이메일을 입력하는 동안 뒤에서 받는다. 화면은 바로 보여 준다.
+  assetsReady = Promise.all([
+    loadFonts(opentype, 'assets/fonts'),
+    fetch('assets/template.pdf').then(r => r.arrayBuffer()),
+  ]).then(([f, t]) => { fonts = f; template = t; });
+  assetsReady.catch(() => {}); // 실패는 신청 화면에 들어갈 때 알린다
   show('vLogin'); // 들어올 때마다 이메일부터 (로그인을 기억하지 않음)
 })();
