@@ -35,6 +35,9 @@ export const CARD = {
   ],
   // 학위(PhD, MBA 등): 영문 성 오른쪽, 같은 기준선. 한글 이름보다 조금 작고 얇은 회색. gap = 성 끝에서 띄우는 거리(mm)
   degree: { after: 'enLast', weight: 'Medium', size: 7, track: 0, color: 'degree', gap: 1.4 },
+  // 괄호 속 이름(enAlias): 있으면 둘째 줄에 성 대신 이 글자를 쓴다. 한글 이름과 같은 8pt, 학위처럼 얇은 회색.
+  // maxX(mm, 은박 로고 왼쪽)를 넘으면 글자를 줄인다 (하한 minScale). 이때 학위는 첫 줄(degreeAfter) 오른쪽으로 간다.
+  alias: { replaces: 'enLast', degreeAfter: 'enFirst', weight: 'Medium', size: 8, track: 0, color: 'degree', maxX: 75, minScale: 0.6 },
   rightX: 85.91,
   maxWidth: 79.5, // 오른쪽 정렬 줄이 넘으면 안 되는 폭
   minScale: 0.85, // 넘칠 때 자동 축소 하한
@@ -65,7 +68,7 @@ export const CARD = {
 
 export const WEIGHTS = ['Regular', 'Medium', 'SemiBold', 'Bold'];
 
-const LABELS = { enFirst: '영문 이름', enLast: '영문 성', degree: '학위', krName: '한글 이름', company: '회사명', titleKr: '직책·소속(한글)', titleEn: '직책·소속(영문)', contact: '연락처', addr1: '주소', addr2: '주소' };
+const LABELS = { enFirst: '영문 이름', enLast: '영문 성', degree: '학위', enAlias: '괄호 속 이름', krName: '한글 이름', company: '회사명', titleKr: '직책·소속(한글)', titleEn: '직책·소속(영문)', contact: '연락처', addr1: '주소', addr2: '주소' };
 
 // ---------- 입력값 정리 ----------
 
@@ -109,6 +112,7 @@ export function normalizeFields(f) {
   if (out.posEn === undefined && out.titleEn !== undefined) [out.posEn, out.deptEn] = splitTitle(out.titleEn);
   for (const k of ['enFirst', 'enLast']) if (out[k] !== undefined) out[k] = normalizeEnName(out[k]);
   if (out.degree !== undefined) out.degree = normalizeDegree(out.degree);
+  if (out.enAlias !== undefined) out.enAlias = normalizeAlias(out.enAlias);
   if (!THEMES[out.type]) out.type = 'basic';
   return out;
 }
@@ -120,31 +124,38 @@ export function normalizeEnName(s) {
   return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
 }
 
+// 괄호 속 이름: 괄호만 빼고 적힌 그대로 (대소문자 유지)
+export function normalizeAlias(s) {
+  return String(s || '').replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 // 학위 표기 통일: 마침표·띄어쓰기를 뺀다. 여러 개면 쉼표로 구분. "Ph.D." → "PhD", "M.B.A., Ph. D." → "MBA, PhD"
 export function normalizeDegree(s) {
   return String(s || '').split(',').map(d => d.replace(/[.\s]/g, '')).filter(Boolean).join(', ');
 }
 
-// "Quang Huy Bui" → ["Quang Huy", "Bui", ""], "Sangu Kim, MBA" → ["Sangu", "Kim", "MBA"] (쉼표 뒤는 학위)
-// 시트 칸의 둘째 줄부터와 괄호(안의 글자 포함)는 버린다: "Fern (FERFSDF) Kim" → ["Fern", "Kim", ""]
+// "Quang Huy Bui" → ["Quang Huy", "Bui", "", ""], "Sangu Kim, MBA" → ["Sangu", "Kim", "MBA", ""] (쉼표 뒤는 학위)
+// 괄호 안은 따로 꺼낸다: "Fern (FERFSDF)" → ["Fern", "", "", "FERFSDF"]. 시트 칸의 둘째 줄부터는 버린다.
 export function splitEnglishName(full) {
-  const line = String(full || '').split(/\r?\n/)[0].replace(/\([^)]*\)?/g, ' ').replace(/[()]/g, ' ');
+  const first = String(full || '').split(/\r?\n/)[0];
+  const alias = normalizeAlias((first.match(/\([^)]*\)?/g) || []).join(' '));
+  const line = first.replace(/\([^)]*\)?/g, ' ').replace(/[()]/g, ' ');
   const [name, ...rest] = line.split(',');
   const s = name.trim().replace(/\s+/g, ' ');
   const degree = rest.map(d => d.trim()).filter(Boolean).join(', ');
   const i = s.lastIndexOf(' ');
-  return i < 0 ? [s, '', degree] : [s.slice(0, i), s.slice(i + 1), degree];
+  return i < 0 ? [s, '', degree, alias] : [s.slice(0, i), s.slice(i + 1), degree, alias];
 }
 
 // 시트의 한 행(직원 정보)을 폼 값으로 바꾼다.
 export function fieldsFromRecord(rec) {
-  const [first, last, rawDegree] = splitEnglishName(rec.enName);
+  const [first, last, rawDegree, enAlias] = splitEnglishName(rec.enName);
   const enFirst = normalizeEnName(first), enLast = normalizeEnName(last), degree = normalizeDegree(rawDegree);
   const [kr, en] = String(rec.title || '').split(/\r?\n/);
   const [posKr, deptKr] = splitTitle(kr);
   const [posEn, deptEn] = splitTitle(en);
   return {
-    krName: rec.krName || '', enFirst, enLast, degree, posKr, deptKr, posEn, deptEn,
+    krName: rec.krName || '', enFirst, enLast, degree, enAlias, posKr, deptKr, posEn, deptEn,
     phone: hyphenPhone(rec.phone), email: rec.email || '',
   };
 }
@@ -243,21 +254,41 @@ export function layoutBack(fields, fonts, opts = {}, card = CARD) {
   const noteMissing = (m, label) => { if (m.length) warnings.push(`${label}: 폰트에 없는 글자 ${m.join(' ')}`); };
 
   const degree = (fields.degree || '').trim(), dg = card.degree;
+  const alias = (fields.enAlias || '').trim(), al = card.alias;
+  const degreeShape = degree ? shapeRuns([{ text: degree, weight: dg.weight, size: dg.size, track: dg.track }], fonts) : null;
+  if (degreeShape) noteMissing(degreeShape.missing, LABELS.degree);
+  const degreeLine = alias ? al.degreeAfter : dg.after; // 괄호 속 이름이 있으면 학위는 첫 줄 오른쪽
   for (const ln of card.nameLines) {
-    const text = (fields[ln.key] || '').trim();
+    const useAlias = alias && ln.key === al.replaces;
+    const text = useAlias ? alias : (fields[ln.key] || '').trim();
     if (!text) continue;
-    const s = shapeRuns([{ text, weight: ln.weight, size: ln.size, track: ln.track }], fonts);
-    noteMissing(s.missing, LABELS[ln.key]);
-    let end = card.nameX + (ln.dx || 0) + s.width;
-    add(transformCmds(s.cmds, (x, y) => [x + card.nameX + (ln.dx || 0), y + ln.y]), ln.color);
-    if (degree && ln.key === dg.after) {
-      const d = shapeRuns([{ text: degree, weight: dg.weight, size: dg.size, track: dg.track }], fonts);
-      noteMissing(d.missing, LABELS.degree);
-      const dx = end + dg.gap;
-      add(transformCmds(d.cmds, (x, y) => [x + dx, y + ln.y]), dg.color);
-      end = dx + d.width;
+    const x0 = card.nameX + (ln.dx || 0);
+    let s;
+    if (useAlias) {
+      // 학위까지 한 줄에 들어가도록 필요하면 줄인다
+      const run = { text, weight: al.weight, size: al.size, track: al.track };
+      s = shapeRuns([run], fonts);
+      const room = al.maxX - x0 - (degreeShape && degreeLine === ln.key ? dg.gap + degreeShape.width : 0);
+      if (s.width > room) {
+        const scale = Math.max(al.minScale, room / s.width);
+        s = shapeRuns([run], fonts, scale);
+        if (s.width > room + 0.01) warnings.push(`${LABELS.enAlias} 줄이 너무 길어 최소 크기로도 넘칩니다. 내용을 줄여 주세요.`);
+        else warnings.push(`${LABELS.enAlias} 줄이 길어 ${Math.round(scale * 100)}%로 자동 축소했습니다.`);
+      }
+      noteMissing(s.missing, LABELS.enAlias);
+      add(transformCmds(s.cmds, (x, y) => [x + x0, y + ln.y]), al.color);
+    } else {
+      s = shapeRuns([{ text, weight: ln.weight, size: ln.size, track: ln.track }], fonts);
+      noteMissing(s.missing, LABELS[ln.key]);
+      add(transformCmds(s.cmds, (x, y) => [x + x0, y + ln.y]), ln.color);
     }
-    if (end > card.w - 4) warnings.push(`이름(${text})이 너무 깁니다.`);
+    let end = x0 + s.width;
+    if (degreeShape && ln.key === degreeLine) {
+      const dx = end + dg.gap;
+      add(transformCmds(degreeShape.cmds, (x, y) => [x + dx, y + ln.y]), dg.color);
+      end = dx + degreeShape.width;
+    }
+    if (!useAlias && end > card.w - 4) warnings.push(`이름(${text})이 너무 깁니다.`);
   }
 
   const contactRuns = [];

@@ -1,17 +1,17 @@
 // 명함 입력 폼 — 신청 화면과 관리자 수정 화면이 함께 쓴다.
-import { hyphenPhone, normalizeFields, normalizeEnName, normalizeDegree, prepareImage, THEMES } from './card.js';
+import { hyphenPhone, normalizeFields, normalizeEnName, normalizeDegree, normalizeAlias, prepareImage, THEMES } from './card.js';
 import { ask } from './ui.js';
 
 const TEXT = [ // [필드, 라벨, placeholder, input 속성]
   ['krName', '한글 이름', ''],
   ['enFirst', '영문 이름 (윗줄)', ''], ['enLast', '영문 성 (아랫줄)', ''],
-  ['degree', '학위 (선택)', 'PhD, MBA'],
+  ['degree', '학위 (선택)', 'PhD, MBA'], ['enAlias', '괄호 속 이름 (선택)', ''],
   ['posKr', '한글 직책', '선임연구원'], ['deptKr', '한글 소속', 'AI연구팀'],
   ['posEn', '영문 직책', 'Senior Research Engineer'], ['deptEn', '영문 소속', 'AI Research Team'],
   ['phone', '휴대폰', '01012345678', 'inputmode="numeric" maxlength="13"'],
   ['email', '이메일', '', 'type="email"'],
 ];
-const OPTIONAL = ['degree']; // 비워 둬도 되는 칸
+const OPTIONAL = ['degree', 'enAlias']; // 비워 둬도 되는 칸 (영문 성은 괄호 속 이름이 있으면 비워도 됨)
 const LABELS = Object.fromEntries([...TEXT.map(([k, l]) => [k, l.replace(/ \(.*\)/, '')]), ['pickup', '수령 장소']]);
 const IMAGE_MAX_CHARS = 45000; // 시트 한 칸(5만 자)에 들어가게
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -33,8 +33,8 @@ export function createCardForm(root, { onChange = () => {}, lockPersonal = false
     <p class="msg info" data-f="typeNote"></p>
     ${field('krName')}
     <div class="grid2">${field('enFirst')}${field('enLast')}</div>
-    <div class="grid2">${field('degree')}<div></div></div>
-    <div class="hint">학위는 영문 성 오른쪽에 작은 회색 글자로 들어갑니다.</div>
+    <div class="grid2">${field('degree')}${field('enAlias')}</div>
+    <div class="hint">학위는 영문 성 오른쪽에 작은 회색 글자로 들어갑니다. 괄호 속 이름을 적으면 둘째 줄에 성 대신 작은 회색 글자로 들어갑니다.</div>
     <div class="grid2">${field('posKr')}${field('deptKr')}</div>
     <div class="grid2">${field('posEn')}${field('deptEn')}</div>
     <div class="hint">명함에는 ‘직책 • 소속’으로 표시됩니다.</div>
@@ -74,6 +74,7 @@ export function createCardForm(root, { onChange = () => {}, lockPersonal = false
     fields.enFirst = normalizeEnName(fields.enFirst);
     fields.enLast = normalizeEnName(fields.enLast);
     fields.degree = normalizeDegree(fields.degree);
+    fields.enAlias = normalizeAlias(fields.enAlias);
     fields.type = (radios().find(r => r.checked) || { value: 'basic' }).value;
     return { fields, pickup: $('pickup').value, image: image && { data: image.data, mode: image.mode, invert: image.invert } };
   }
@@ -101,7 +102,8 @@ export function createCardForm(root, { onChange = () => {}, lockPersonal = false
 
   function validate() {
     const bad = [];
-    for (const k of [...TEXT.map(t => t[0]).filter(k => !OPTIONAL.includes(k)), 'pickup']) {
+    const optional = $('enAlias').value.trim() ? [...OPTIONAL, 'enLast'] : OPTIONAL;
+    for (const k of [...TEXT.map(t => t[0]).filter(k => !optional.includes(k)), 'pickup']) {
       const el = $(k);
       let ok = !!el.value.trim();
       if (ok && k === 'phone') ok = /^01\d-\d{3,4}-\d{4}$/.test(el.value);
@@ -124,8 +126,9 @@ export function createCardForm(root, { onChange = () => {}, lockPersonal = false
   // 영문 이름·학위는 칸을 벗어날 때 규칙대로 고쳐 보여 준다 (입력 중에 바꾸면 커서가 튐)
   root.addEventListener('focusout', e => {
     const t = e.target, k = t.dataset && t.dataset.f;
-    if (k !== 'enFirst' && k !== 'enLast' && k !== 'degree') return;
-    const v = k === 'degree' ? normalizeDegree(t.value) : normalizeEnName(t.value);
+    const fix = { enFirst: normalizeEnName, enLast: normalizeEnName, degree: normalizeDegree, enAlias: normalizeAlias }[k];
+    if (!fix) return;
+    const v = fix(t.value);
     if (v !== t.value) { t.value = v; onChange(); }
   });
   root.addEventListener('change', async e => {
