@@ -135,14 +135,17 @@ export function normalizeDegree(s) {
 }
 
 // "Quang Huy Bui" → ["Quang Huy", "Bui", "", ""], "Sangu Kim, MBA" → ["Sangu", "Kim", "MBA", ""] (쉼표 뒤는 학위)
-// 괄호 안은 따로 꺼낸다: "Fern (FERFSDF)" → ["Fern", "", "", "FERFSDF"]. 시트 칸의 둘째 줄부터는 버린다.
+// 괄호 안은 따로 꺼낸다: "Fern (FERFSDF)" → ["Fern", "", "", "FERFSDF"]. 괄호는 둘째 줄에 있어도 읽고("FERN\n(NICHANUN T)"),
+// 괄호 밖의 둘째 줄부터는 버린다.
 export function splitEnglishName(full) {
-  const first = String(full || '').split(/\r?\n/)[0];
-  const alias = normalizeAlias((first.match(/\([^)]*\)?/g) || []).join(' '));
-  const line = first.replace(/\([^)]*\)?/g, ' ').replace(/[()]/g, ' ');
-  const [name, ...rest] = line.split(',');
+  const all = String(full || '');
+  const first = all.split(/\r?\n/)[0];
+  const alias = normalizeAlias((all.match(/\([^)]*\)?/g) || []).join(' '));
+  const noParen = t => t.replace(/\([^)]*\)?/g, ' ').replace(/[()]/g, ' ');
+  const name = noParen(first).split(',')[0];
   const s = name.trim().replace(/\s+/g, ' ');
-  const degree = rest.map(d => d.trim()).filter(Boolean).join(', ');
+  // 학위는 어느 줄이든 쉼표 뒤 ("FERN\n(NICHANUN T), PhD" → PhD)
+  const degree = noParen(all).split(/\r?\n/).flatMap(l => l.split(',').slice(1)).map(d => d.trim()).filter(Boolean).join(', ');
   const i = s.lastIndexOf(' ');
   return i < 0 ? [s, '', degree, alias] : [s.slice(0, i), s.slice(i + 1), degree, alias];
 }
