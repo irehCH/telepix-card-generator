@@ -48,6 +48,9 @@ export const CARD = {
   url: { text: 'telepix.ai', weight: 'Regular', size: 7.0, track: 0, color: 'url', x: 6.62, yTop: 35.8 },
   // 첨부 이미지(QR·아이콘) 자리 — telepix.ai 대신 들어간다. 이 상자보다 커지지 않는다 (참고 QR 9.74mm).
   imageBox: { x: 6.12, y: 35.8, w: 9.74, h: 9.74 },
+  // 영문 직책·소속 줄이 이미지 자리 오른쪽 끝에서 이 거리(mm) 안으로 들어오면 두 줄로 나눈다
+  titleEnSplitGap: 1.5,
+  titleEnLeading: 3.1, // 두 줄로 나눴을 때 줄 간격(mm, 7.2pt 글자)
   fixed: {
     company: '텔레픽스 주식회사',
     addr1: '서울특별시 영등포구 국제금융로8길 2, 18층 (여의도동, 농협재단빌딩)',
@@ -244,13 +247,8 @@ export function layoutBack(fields, fonts, opts = {}, card = CARD) {
     addr2: card.fixed.addr2,
   };
 
-  // 아래에서 위로: 빈 줄은 건너뛰고 위 줄들이 내려온다.
-  let y = null;
-  for (const ln of [...card.infoLines].reverse()) {
-    const runs = ln.key === 'contact' ? contactRuns
-      : (texts[ln.key] ? [{ text: texts[ln.key], weight: ln.weight, size: ln.size, track: ln.track }] : []);
-    if (!runs.length) continue;
-    y = y === null ? ln.y : y - ln.gap;
+  // 한 줄을 오른쪽 정렬로 그린다. 너무 길면 자동 축소(하한 minScale).
+  const placeRight = (runs, ln, yy) => {
     let s = shapeRuns(runs, fonts);
     let scale = 1;
     if (s.width > card.maxWidth) {
@@ -264,8 +262,33 @@ export function layoutBack(fields, fonts, opts = {}, card = CARD) {
       s = shapeRuns(runs, fonts, scale);
     }
     noteMissing(s.missing, LABELS[ln.key]);
-    const x0 = card.rightX - s.width, yy = y;
+    const x0 = card.rightX - s.width;
     add(transformCmds(s.cmds, (x, yv) => [x + x0, yv + yy]), ln.color);
+  };
+  const runOf = (text, ln) => [{ text, weight: ln.weight, size: ln.size, track: ln.track }];
+
+  // 영문 직책·소속이 한 줄로는 이미지 자리(왼쪽 아래 QR 칸)에 1.5mm 안쪽까지 다가가면,
+  // 가운뎃점을 빼고 직책 / 소속 두 줄로 나눈다.
+  const splitLeftLimit = card.imageBox.x + card.imageBox.w + card.titleEnSplitGap;
+  const posEn = joinTitle([fields.posEn], ''), deptEn = joinTitle([fields.deptEn], '');
+  const enSpec = lineSpec('titleEn');
+  const splitEn = !!(posEn && deptEn && texts.titleEn) &&
+    card.rightX - shapeRuns(runOf(texts.titleEn, enSpec), fonts).width < splitLeftLimit;
+
+  // 아래에서 위로: 빈 줄은 건너뛰고 위 줄들이 내려온다.
+  let y = null;
+  for (const ln of [...card.infoLines].reverse()) {
+    if (ln.key === 'titleEn' && splitEn) {
+      y = y === null ? ln.y : y - ln.gap;
+      placeRight(runOf(deptEn, ln), ln, y);   // 아랫줄: 소속
+      y -= card.titleEnLeading;
+      placeRight(runOf(posEn, ln), ln, y);    // 윗줄: 직책
+      continue;
+    }
+    const runs = ln.key === 'contact' ? contactRuns : (texts[ln.key] ? runOf(texts[ln.key], ln) : []);
+    if (!runs.length) continue;
+    y = y === null ? ln.y : y - ln.gap;
+    placeRight(runs, ln, y);
   }
 
   const img = opts.image;
@@ -387,7 +410,8 @@ export async function buildPdf(PDFLib, templateBytes, layout, meta = {}, card = 
     ops.push(fill()); // 비영(nonzero) 채우기 — 폰트 외곽선 규칙과 같다
   }
   ops.push(popGraphicsState());
-  back.pushOperators(...ops);
+  // 나눠서 넘긴다: 복잡한 QR은 명령이 수만 개라 한 번에 펼치면 호출 스택이 넘친다
+  for (let i = 0; i < ops.length; i += 2000) back.pushOperators(...ops.slice(i, i + 2000));
   if (theme.foilPage != null) doc.addPage((await doc.copyPages(tpl, [theme.foilPage]))[0]);
 
   for (const p of doc.getPages()) {

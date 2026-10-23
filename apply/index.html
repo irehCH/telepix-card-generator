@@ -51,7 +51,8 @@
         <div id="warn" class="msg warn"></div>
         <div class="row" style="margin-top:16px">
           <button class="accent" id="btnSubmit">신청하기</button>
-          <button type="button" id="btnDigital" title="화면·메신저용 PDF (재단선 크기, 기본형은 은박이 뒷면에 그려짐)">디지털 명함 받기</button>
+          <!-- 디지털 명함 받기: 잠시 숨김. 다시 쓰려면 class="hidden" 만 지우면 됨 (기능은 app.js에 그대로 있음) -->
+          <button type="button" id="btnDigital" class="hidden" title="화면·메신저용 PDF (재단선 크기, 기본형은 은박이 뒷면에 그려짐)">디지털 명함 받기</button>
         </div>
         <div id="submitMsg" class="msg"></div>
       </form>
