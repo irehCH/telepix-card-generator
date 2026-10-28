@@ -41,8 +41,8 @@ function details(i) {
 }
 
 function visible() {
-  const pickup = $('pickupFilter').value, type = $('typeFilter').value;
-  return items.filter(i => (!pickup || i.pickup === pickup) && (!type || typeOf(i) === type));
+  const pickup = $('pickupFilter').value, type = $('typeFilter').value, status = $('statusFilter').value;
+  return items.filter(i => (!pickup || i.pickup === pickup) && (!type || typeOf(i) === type) && (!status || (isDone(i) ? 'done' : 'pending') === status));
 }
 
 const isDone = i => i.status === 'done';
@@ -230,7 +230,7 @@ $('selAll').addEventListener('change', e => {
   for (const i of visible()) picked.set(i.id, e.target.checked);
   draw();
 });
-for (const id of ['pickupFilter', 'typeFilter']) $(id).addEventListener('change', draw);
+for (const id of ['pickupFilter', 'typeFilter', 'statusFilter']) $(id).addEventListener('change', draw);
 $('refresh').addEventListener('click', refresh);
 
 // ---------- 툴바 (체크된 신청에 하는 일) ----------
