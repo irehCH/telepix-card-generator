@@ -117,7 +117,7 @@ async function demo(b) {
     }
     case 'list':
       if (!isAdmin) return AUTH;
-      return { ok: true, items: mem.subs.map(s => ({ ...s, hasFile: !!mem.files[s.id] })).reverse() };
+      return { ok: true, items: mem.subs.map(s => ({ ...s, status: s.status === 'done' ? 'done' : 'pending', hasFile: !!mem.files[s.id] })).reverse() };
     case 'getPdf':
       if (!isAdmin) return AUTH;
       return mem.files[b.id] ? { ok: true, base64: mem.files[b.id] } : { ok: false, message: '파일이 없습니다.' };
@@ -140,6 +140,14 @@ async function demo(b) {
       mem.subs = mem.subs.filter(s => !ids.includes(s.id));
       save();
       return { ok: true, deleted: before - mem.subs.length, filesTrashed };
+    }
+    case 'setStatus': {
+      if (!isAdmin) return AUTH;
+      const ids = b.ids || [];
+      const hit = mem.subs.filter(s => ids.includes(s.id));
+      hit.forEach(s => { s.status = b.status === 'done' ? 'done' : 'pending'; });
+      save();
+      return { ok: true, changed: hit.length };
     }
   }
   return { ok: false, message: '알 수 없는 요청' };
