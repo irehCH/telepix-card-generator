@@ -28,15 +28,15 @@
 
   <section id="vList" class="hidden">
     <div class="row" style="justify-content:space-between"><div class="title-row"><a class="icon back" href="./" data-keep-query aria-label="뒤로 (홈)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M11 6l-6 6 6 6"/></svg></a><h1>명함 신청 목록</h1></div><button type="button" id="logout" class="link">로그아웃</button></div>
-    <p class="sub">오른쪽 아이콘으로 신청을 수정·내려받기·삭제할 수 있습니다. 위 툴바의 버튼은 지금 보이는 목록에서 체크된 신청에만 적용됩니다. <b>선택 PDF 합치기</b>는 수령 장소·타입별 주문용 PDF로 합쳐 내려받고 (조합마다 한 파일씩), <b>선택 완료</b>는 완료로 표시해 흐리게 보여 줍니다. 처음에는 완료하지 않은 신청만 체크되어 있습니다. 신청은 60일이 지나면 자동으로 지워집니다.</p>
+    <p class="sub">오른쪽 아이콘으로 신청을 수정·내려받기·삭제할 수 있습니다. 위 툴바의 버튼은 지금 보이는 목록에서 체크된 신청에만 적용됩니다. <b>PDF 합치기</b>는 수령 장소·타입별 주문용 PDF로 합쳐 내려받고 (조합마다 한 파일씩), <b>주문 완료하기</b>는 주문 완료로 표시해 흐리게 보여 줍니다. 처음에는 주문 대기인 신청만 체크되어 있습니다. 주문 완료한 신청은 30일이 지나면 자동으로 지워지고, 주문 대기인 신청은 지워지지 않습니다.</p>
     <div class="toolbar">
       <select id="bleed" style="width:auto" aria-label="재단 여백" title="주문용 PDF의 재단 여백 (완성 크기 90×50mm 바깥)">
         <option value="1">재단 여백 1mm (92×52)</option>
         <option value="2">재단 여백 2mm (94×54)</option>
       </select>
-      <button id="merge" class="accent">선택 PDF 합치기</button>
-      <button id="markDone">선택 완료</button>
-      <button id="delSel" class="danger">선택 삭제</button>
+      <button id="merge" class="accent">PDF 합치기</button>
+      <button id="markDone">주문 완료하기</button>
+      <button id="delSel" class="danger">신청 삭제</button>
     </div>
     <div class="panel">
       <div class="filters">

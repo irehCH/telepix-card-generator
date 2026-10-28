@@ -133,13 +133,22 @@ button.icon.spin svg { animation: spin .8s linear infinite; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-size: 12px; font-weight: var(--medium); }
-th.sel, td.sel { width: 28px; padding-right: 0; }
+th.sel, td.sel { width: 44px; }
 td .w { color: var(--accent); font-size: 12px; white-space: pre-line; }
 /* 툴바: 목록(패널) 위, 체크된 신청에 하는 일 버튼들. 필터 줄: 패널 안 맨 위 */
 .toolbar, .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-/* 완료(done) 신청: 줄을 40% 투명도로. 오른쪽 관리 버튼도 흐리지만 올리면 원래대로 반응하고 그대로 동작 */
-tr.done > td:not(.manage), tr.done > td.manage button { opacity: .4; }
+/* 체크박스 칸: 칸 아무 곳이나 눌러도 체크 (admin.js), 끌어도 글자가 선택되지 않게 */
+th.sel, td.sel { cursor: pointer; user-select: none; -webkit-user-select: none; }
+/* 주문 완료(done) 신청: 줄을 40% 투명도로. 체크박스와 '대기로 되돌리기'는 그대로 선명하게.
+   나머지 관리 버튼도 흐리지만 올리면 원래대로 반응하고 그대로 동작 */
+tr.done > td:not(.manage):not(.sel), tr.done > td.manage button:not(.revert) { opacity: .4; }
 tr.done > td.manage button:hover:not(:disabled) { opacity: 1; }
+/* 대기로 되돌리기: 밝은 배경(OnSurface) + 어두운 아이콘(OnSurface-Inverted) */
+button.icon.revert { background: var(--on-surface); border-color: var(--on-surface); color: var(--on-surface-inverted); }
+button.icon.revert:hover { background: var(--accent); border-color: var(--accent); }
+/* 마우스를 올리면 버튼 위에 뜨는 안내문 (data-tip) */
+button[data-tip] { position: relative; }
+button[data-tip]:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 4px 8px; font-size: 12px; line-height: 1.4; background: var(--on-surface); color: var(--on-surface-inverted); border-radius: var(--radius-sm); pointer-events: none; z-index: 5; }
 .tag { display: inline-block; font-size: 11px; line-height: 1.5; padding: 0 5px; border: 1px solid var(--line); border-radius: var(--radius-sm); vertical-align: 1px; }
 .thumb { width: 150px; aspect-ratio: 92/52; display: block; border-radius: var(--radius); background: var(--soft); }
 .hidden { display: none !important; }

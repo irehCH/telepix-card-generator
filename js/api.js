@@ -145,7 +145,10 @@ async function demo(b) {
       if (!isAdmin) return AUTH;
       const ids = b.ids || [];
       const hit = mem.subs.filter(s => ids.includes(s.id));
-      hit.forEach(s => { s.status = b.status === 'done' ? 'done' : 'pending'; });
+      hit.forEach(s => {
+        if (b.status !== 'done') Object.assign(s, { status: 'pending', doneAt: '' });
+        else if (s.status !== 'done') Object.assign(s, { status: 'done', doneAt: new Date().toISOString() });
+      });
       save();
       return { ok: true, changed: hit.length };
     }

@@ -23,6 +23,7 @@ const typeOf = i => (THEMES[i.type] ? i.type : 'basic');
 const svgIcon = d => `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="${d}"/></svg>`;
 const EDIT = svgIcon('M4 20h4L19 9l-4-4L4 16v4M13.5 6.5l4 4');
 const DOWNLOAD = svgIcon('M12 4v11M7 10l5 5 5-5M5 20h14');
+const REVERT = svgIcon('M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5');
 const TRASH = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
 
 function thumb(i) {
@@ -63,13 +64,14 @@ function draw() {
     <tr${isDone(i) ? ' class="done"' : ''}>
       <td class="sel"><input type="checkbox" data-sel="${esc(i.id)}" ${isPicked(i) ? 'checked' : ''} aria-label="${esc(i.krName)} 선택"></td>
       <td>${thumb(i)}</td>
-      <td>${isDone(i) ? '<span class="tag">완료</span> ' : ''}<b>${esc(i.krName)}</b> <span class="hint">${esc(i.enName)}</span><br><span class="hint">${esc(i.email)}</span><div class="detail">${details(i)}</div></td>
+      <td>${isDone(i) ? '<span class="tag">주문 완료</span> ' : ''}<b>${esc(i.krName)}</b> <span class="hint">${esc(i.enName)}</span><br><span class="hint">${esc(i.email)}</span><div class="detail">${details(i)}</div></td>
       <td>${esc(THEMES[typeOf(i)].label)}</td>
-      <td class="hint">${esc(fmt(i.createdAt))}${i.updatedAt ? `<br>수정 ${esc(fmt(i.updatedAt))}` : ''}</td>
+      <td class="hint">${esc(fmt(i.createdAt))}${i.updatedAt ? `<br>수정 ${esc(fmt(i.updatedAt))}` : ''}${isDone(i) && i.doneAt ? `<br>주문 완료 ${esc(fmt(i.doneAt))}` : ''}</td>
       <td>${esc(i.pickup || '')}</td>
       <td>${esc(i.memo)}${i.adminMemo ? `<div class="detail">관리자: ${esc(i.adminMemo)}</div>` : ''}${i.warnings ? `<div class="w">${esc(i.warnings)}</div>` : ''}</td>
       <td class="manage"><div class="row" style="flex-wrap:nowrap;gap:6px">
-        <button class="icon" data-edit="${esc(i.id)}" title="수정" aria-label="${esc(i.krName)} 신청 수정">${EDIT}</button>
+        ${isDone(i) ? `<button class="icon revert" data-revert="${esc(i.id)}" data-tip="대기로 되돌리기" aria-label="${esc(i.krName)} 주문 대기로 되돌리기">${REVERT}</button>`
+          : `<button class="icon" data-edit="${esc(i.id)}" title="수정" aria-label="${esc(i.krName)} 신청 수정">${EDIT}</button>`}
         ${i.hasFile ? `<button class="icon" data-open="${esc(i.id)}" title="PDF 내려받기" aria-label="${esc(i.krName)} PDF 내려받기">${DOWNLOAD}</button>`
           : `<button class="icon" disabled title="드라이브 individual 폴더에 이 신청의 PDF가 없습니다 (지워졌거나 옮겨짐)" aria-label="PDF 없음">${DOWNLOAD}</button>`}
         <button class="icon danger" data-del="${esc(i.id)}" title="이 신청 삭제" aria-label="${esc(i.krName)} 신청 삭제">${TRASH}</button>
@@ -81,14 +83,16 @@ function draw() {
 }
 
 // 머리글 체크박스와 툴바 버튼 글자를 지금 선택에 맞춘다.
-// 체크된 것이 모두 완료면 '선택 완료' 대신 '선택 완료 취소' (실수로 완료한 것을 되돌리기)
+// 주문 완료하기는 체크된 것 중 대기인 것만 센다. 할 것이 없으면 주문 완료하기·신청 삭제는 비활성
 function syncSelection() {
-  const rows = visible(), sel = selected(), n = sel.length;
+  const rows = visible(), sel = selected(), n = sel.length, todo = sel.filter(i => !isDone(i)).length;
   $('selAll').checked = rows.length > 0 && n === rows.length;
   $('selAll').indeterminate = n > 0 && n < rows.length;
-  $('merge').textContent = `선택 PDF 합치기 (${n}건)`;
-  $('markDone').textContent = `${n && sel.every(isDone) ? '선택 완료 취소' : '선택 완료'} (${n}건)`;
-  $('delSel').textContent = `선택 삭제 (${n}건)`;
+  $('merge').textContent = `PDF 합치기 (${n}건)`;
+  $('markDone').textContent = `주문 완료하기 (${todo}건)`;
+  $('markDone').disabled = !todo;
+  $('delSel').textContent = `신청 삭제 (${n}건)`;
+  $('delSel').disabled = !n;
 }
 
 // 목록 불러오기. 서버 응답이 몇 초 걸릴 수 있어 그동안 '불러오는 중'을 보여 준다.
@@ -195,6 +199,7 @@ $('rows').addEventListener('click', async e => {
   const btn = e.target.closest('button');
   if (!btn) return;
   if (btn.dataset.edit) { openEdit(btn.dataset.edit); return; }
+  if (btn.dataset.revert) { setStatus([btn.dataset.revert], 'pending'); return; }
   if (btn.dataset.del) {
     const i = items.find(x => x.id === btn.dataset.del);
     if (i && await ask(`${i.krName} (${THEMES[typeOf(i)].label} · ${i.pickup}) 신청을 지울까요?\n신청 기록과 individual 폴더의 PDF가 함께 지워집니다.`, { ok: '삭제', danger: true })) {
@@ -216,6 +221,11 @@ $('rows').addEventListener('change', e => {
   picked.set(id, e.target.checked);
   syncSelection();
 });
+// 체크박스 칸 아무 곳이나 눌러도 체크가 바뀐다 (체크박스 자체를 누르면 브라우저가 바꿈)
+document.querySelector('#vList table').addEventListener('click', e => {
+  const cell = e.target.closest('td.sel, th.sel');
+  if (cell && e.target.tagName !== 'INPUT') cell.querySelector('input[type=checkbox]').click();
+});
 $('selAll').addEventListener('change', e => {
   for (const i of visible()) picked.set(i.id, e.target.checked);
   draw();
@@ -225,30 +235,33 @@ $('refresh').addEventListener('click', refresh);
 
 // ---------- 툴바 (체크된 신청에 하는 일) ----------
 
-// 선택 삭제: 여러 건이면 실수 방지로 ‘선택삭제’를 입력하게 한다
+// 신청 삭제: 여러 건이면 실수 방지로 ‘선택삭제’를 입력하게 한다
 $('delSel').addEventListener('click', async () => {
   const sel = selected();
   if (!sel.length) return msg($('listMsg'), '선택한 신청이 없습니다.', 'warn');
   const okd = sel.length === 1
     ? await ask(`${sel[0].krName} (${THEMES[typeOf(sel[0])].label} · ${sel[0].pickup}) 신청을 지울까요?\n신청 기록과 individual 폴더의 PDF가 함께 지워집니다.`, { ok: '삭제', danger: true })
-    : await ask(`체크된 신청 ${sel.length}건을 지웁니다.\nindividual 폴더의 PDF도 함께 휴지통으로 갑니다.\n\n계속하려면 아래에 ‘선택삭제’라고 입력하세요.`, { ok: '선택 삭제', danger: true, input: '선택삭제' });
+    : await ask(`체크된 신청 ${sel.length}건을 지웁니다.\nindividual 폴더의 PDF도 함께 휴지통으로 갑니다.\n\n계속하려면 아래에 ‘선택삭제’라고 입력하세요.`, { ok: '신청 삭제', danger: true, input: '선택삭제' });
   if (okd) deleteRows({ ids: sel.map(i => i.id) }, `선택한 신청 ${sel.length}건을`);
 });
 
-// 선택 완료: 체크된 신청을 완료(done)로. 체크된 것이 모두 이미 완료면 대기(pending)로 되돌린다.
-// 바꾼 신청은 직접 바꾼 체크를 잊어서, 완료는 체크 해제·대기는 체크된 채로 보인다.
-$('markDone').addEventListener('click', async () => {
-  const sel = selected();
-  if (!sel.length) return msg($('listMsg'), '선택한 신청이 없습니다.', 'warn');
-  const undo = sel.every(isDone);
-  await busy(undo ? '완료를 취소하는 중…' : '완료로 바꾸는 중…', async () => {
+// 진행 상태 바꾸기. 바꾼 신청은 직접 바꾼 체크를 잊어서, 주문 완료는 체크 해제·대기는 체크된 채로 보인다.
+async function setStatus(ids, status) {
+  const done = status === 'done';
+  await busy(done ? '주문 완료로 바꾸는 중…' : '주문 대기로 되돌리는 중…', async () => {
     try {
-      const r = await call('setStatus', { ids: sel.map(i => i.id), status: undo ? 'pending' : 'done' });
-      for (const i of sel) picked.delete(i.id);
+      const r = await call('setStatus', { ids, status });
+      for (const id of ids) picked.delete(id);
       await refresh();
-      msg($('listMsg'), undo ? `${r.changed}건의 완료를 취소했습니다.` : `${r.changed}건을 완료로 표시했습니다. 완료한 신청은 흐리게 보이고 체크가 풀립니다.`, 'ok');
+      msg($('listMsg'), done ? `${r.changed}건을 주문 완료로 표시했습니다. 흐리게 보이고 체크가 풀리며, 30일 뒤 자동으로 지워집니다.` : `${r.changed}건을 주문 대기로 되돌렸습니다.`, 'ok');
     } catch (err) { handleErr(err); }
   });
+}
+
+// 주문 완료하기: 체크된 신청 중 대기인 것만 주문 완료(done)로
+$('markDone').addEventListener('click', () => {
+  const ids = selected().filter(i => !isDone(i)).map(i => i.id);
+  if (ids.length) setStatus(ids, 'done');
 });
 
 // 선택 PDF 합치기: 지금 필터(타입·수령 장소)에 보이는 신청 중 체크된 것만 수령 장소 × 타입별로 합쳐 내려받는다.
